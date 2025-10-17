@@ -5,6 +5,7 @@ service-url.txt
 .env
 .env.local
 .env.production
+ComplementoDocs/Keys.gs
 
 # Arquivos de saída
 outputs/

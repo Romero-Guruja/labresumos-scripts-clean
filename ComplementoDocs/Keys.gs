@@ -5,12 +5,12 @@
 function getKeys() {
   return {
   // Substitua pela sua chave de API da OpenAI
-  OPENAI_API_KEY: 'REDACTED-OPENAI-KEY-REVOGADA',
+  OPENAI_API_KEY: 'SUA_CHAVE_OPENAI_AQUI',
   
   // ID do seu Custom GPT (você precisa pegar isso após criar)
-  ASSISTANT_ID: 'asst_OvQIq5sjJqVSm1iwI8OTECzb', // Substitua pelo ID real
+  ASSISTANT_ID: 'SEU_ASSISTANT_ID_AQUI', // Substitua pelo ID real
 
-
-  ANTHROPIC_API_KEY: 'REDACTED-ANTHROPIC-KEY-REVOGADA'
+  // Substitua pela sua chave de API da Anthropic
+  ANTHROPIC_API_KEY: 'SUA_CHAVE_ANTHROPIC_AQUI'
   };
 }
