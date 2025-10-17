@@ -1,0 +1,31 @@
+# Flask e extensões
+Flask==3.0.0
+flask-cors==4.0.0
+gunicorn==21.2.0
+
+# Google APIs
+google-api-python-client==2.108.0
+google-auth==2.25.2
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.1.0
+
+# Geração de PDF
+WeasyPrint==66.0
+pydyf==0.11.0
+jinja2==3.1.2
+
+# QR Code
+qrcode[pil]==7.4.2
+Pillow==10.1.0
+
+# Gráficos
+plotly==5.18.0
+kaleido==0.2.1
+matplotlib==3.8.2
+
+# Utilitários
+requests==2.31.0
+python-dateutil==2.8.2
+
+# Tipagem (opcional mas recomendado)
+typing-extensions==4.9.0

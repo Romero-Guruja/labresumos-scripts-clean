@@ -1,0 +1,777 @@
+:root{--primary-yellow:#F1CC00;--primary-dark:#333B49;--primary-blue:#2A6B9F;--bg-light:#F3F1E8}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:var(--primary-dark)}
+.page{max-width:210mm;margin:0 auto;background:white}
+.content{padding:32px}
+.h1{font-size:28px;margin:24px 0 12px;border-bottom:3px solid var(--primary-yellow);padding-bottom:8px;letter-spacing:-0.5px;line-height:1.2}
+.h2{font-size:22px;margin:20px 0 10px;border-bottom:2px solid var(--primary-yellow);padding-bottom:6px;letter-spacing:-0.3px}
+.h3{font-size:18px;margin:16px 0 8px;color:var(--primary-dark);opacity:0.9}
+.p{white-space:pre-wrap;margin:8px 0}
+.tags{display:flex;gap:8px;flex-wrap:wrap;background:var(--bg-light);padding:12px;border-radius:10px}
+.tag{background:white;border:1.5px solid var(--primary-yellow);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:500;transition:all 0.2s ease}
+table{width:100%;border-collapse:collapse;margin:10px 0}
+thead{background:var(--primary-dark);color:#fff}
+th,td{padding:8px;border-bottom:1px solid #e0e0e0}
+.gloss{background:var(--bg-light);padding:8px;border-left:3px solid var(--primary-yellow);margin:6px 0}
+img{max-width:100%;}
+
+/* ================== ESTILOS PARA QUESTÕES ================== */
+.questao-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid var(--primary-yellow);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(42, 107, 159, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.questao-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-yellow) 0%, var(--primary-blue) 100%);
+}
+
+.questao-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--bg-light);
+}
+
+.questao-icon {
+  font-size: 24px;
+  background: var(--primary-yellow);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(241, 204, 0, 0.3);
+}
+
+.questao-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  letter-spacing: -0.3px;
+}
+
+.questao-pergunta {
+  background: var(--bg-light);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary-blue);
+}
+
+.questao-pergunta strong {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--primary-dark);
+}
+
+.questao-alternativas {
+  margin-bottom: 20px;
+}
+
+.questao-alternativas ol {
+  counter-reset: alternativa;
+  padding-left: 0;
+  margin: 0;
+}
+
+.alternativa-item {
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  list-style: none;
+  counter-increment: alternativa;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.alternativa-item:hover {
+  border-color: var(--primary-yellow);
+  box-shadow: 0 2px 8px rgba(241, 204, 0, 0.2);
+}
+
+.alternativa-item::before {
+  content: counter(alternativa, upper-alpha);
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--primary-blue);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.questao-resposta {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.resposta-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.resposta-icon {
+  font-size: 18px;
+}
+
+.resposta-text {
+  font-weight: 600;
+  color: #2e7d32;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resposta-conteudo {
+  font-weight: 600;
+  color: var(--primary-dark);
+  font-size: 16px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #4caf50;
+}
+
+/* ================== ESTILOS PARA QUESTÕES DISSERTATIVAS ================== */
+.questao-dissertativa {
+  border-color: var(--primary-blue);
+}
+
+.questao-dissertativa .questao-icon {
+  background: var(--primary-blue);
+  box-shadow: 0 2px 8px rgba(42, 107, 159, 0.3);
+}
+
+.questao-espaco-resposta {
+  background: linear-gradient(135deg, #fff3e0 0%, #fef7e8 100%);
+  border: 2px solid #ff9800;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.espaco-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.espaco-icon {
+  font-size: 18px;
+}
+
+.espaco-text {
+  font-weight: 600;
+  color: #e65100;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.linhas-resposta {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.linha-resposta {
+  height: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.linha-resposta:last-child {
+  margin-bottom: 0;
+}
+
+.linha-resposta::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent 8px,
+    #e0e0e0 8px,
+    #e0e0e0 16px
+  );
+}
+
+/* ================== ESTILOS PARA CHECKLIST ================== */
+.checklist-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid var(--primary-blue);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(42, 107, 159, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.checklist-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-blue) 0%, #4caf50 100%);
+}
+
+.checklist-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--bg-light);
+}
+
+.checklist-icon {
+  font-size: 24px;
+  background: var(--primary-blue);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(42, 107, 159, 0.3);
+}
+
+.checklist-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  letter-spacing: -0.3px;
+  flex: 1;
+}
+
+.checklist-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  min-width: 40px;
+}
+
+.progress-bar {
+  width: 80px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-blue) 0%, #4caf50 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border: 1.5px solid transparent;
+}
+
+.checklist-item.pending {
+  background: linear-gradient(135deg, #fff3e0 0%, #fef7e8 100%);
+  border-color: #ff9800;
+}
+
+.checklist-item.completed {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  border-color: #4caf50;
+}
+
+.checklist-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.item-checkbox {
+  margin-top: 2px;
+}
+
+.checkbox-checked {
+  width: 24px;
+  height: 24px;
+  background: #4caf50;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+}
+
+.checkbox-empty {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #ff9800;
+  border-radius: 6px;
+  background: white;
+}
+
+.item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--primary-dark);
+}
+
+.checklist-item.completed .item-text {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.item-priority {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.priority-alta {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef5350;
+}
+
+.priority-média {
+  background: #fff8e1;
+  color: #ef6c00;
+  border: 1px solid #ffb74d;
+}
+
+.priority-baixa {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #66bb6a;
+}
+
+/* ================== ESTILOS PARA LISTA ANINHADA ================== */
+.lista-aninhada-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid var(--primary-yellow);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(241, 204, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lista-aninhada-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-yellow) 0%, var(--primary-blue) 100%);
+}
+
+.lista-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--bg-light);
+}
+
+.lista-icon {
+  font-size: 24px;
+  background: var(--primary-yellow);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(241, 204, 0, 0.3);
+}
+
+.lista-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  letter-spacing: -0.3px;
+  flex: 1;
+}
+
+.lista-count {
+  background: var(--bg-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-yellow);
+}
+
+.lista-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lista-section {
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.lista-section:hover {
+  border-color: var(--primary-yellow);
+  box-shadow: 0 4px 12px rgba(241, 204, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.section-header {
+  background: linear-gradient(135deg, var(--bg-light) 0%, #f5f3e8 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.section-number {
+  background: var(--primary-yellow);
+  color: var(--primary-dark);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(241, 204, 0, 0.3);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  flex: 1;
+  letter-spacing: -0.2px;
+}
+
+.section-count {
+  background: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+
+.section-items {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.item-bullet {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-blue);
+  border-radius: 50%;
+  margin-top: 6px;
+  box-shadow: 0 1px 3px rgba(42, 107, 159, 0.3);
+}
+
+.section-item .item-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--primary-dark);
+  flex: 1;
+}
+
+.section-item:hover .item-bullet {
+  background: var(--primary-yellow);
+  transform: scale(1.2);
+  transition: all 0.2s ease;
+}
+
+/* ================== ESTILOS PARA CÓDIGO (LEI SECA STYLE) ================== */
+.codigo-container {
+  background: #333B49 !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  margin: 24px 0 !important;
+  box-shadow: 0 8px 24px rgba(51, 59, 73, 0.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+  page-break-inside: avoid !important;
+}
+
+.codigo-sidebar {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 4px !important;
+  background: #F1CC00 !important;
+  border-radius: 12px 0 0 12px !important;
+}
+
+.codigo-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(241, 204, 0, 0.2) !important;
+}
+
+
+.codigo-info {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.codigo-icon {
+  background: #F1CC00 !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 12px !important;
+}
+
+.icon-symbol {
+  font-size: 20px !important;
+  color: #333B49 !important;
+  font-weight: bold !important;
+}
+
+.codigo-title-section {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.codigo-titulo {
+  color: #F1CC00 !important;
+  margin: 0 !important;
+  font-family: 'Figtree', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+.codigo-subtitulo {
+  color: #F3F1E8 !important;
+  font-size: 11px !important;
+  margin-top: 2px !important;
+  opacity: 0.8 !important;
+}
+
+.codigo-linguagem {
+  background: rgba(241, 204, 0, 0.1) !important;
+  border: 1px solid #F1CC00 !important;
+  border-radius: 6px !important;
+  padding: 4px 12px !important;
+  color: #F1CC00 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.linguagem-icon {
+  font-size: 14px;
+}
+
+
+.codigo-descricao {
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-left: 2px solid #F1CC00 !important;
+}
+
+.descricao-icon {
+  font-size: 14px !important;
+}
+
+.descricao-texto {
+  color: #F3F1E8 !important;
+  font-size: 13px !important;
+  font-style: italic !important;
+}
+
+.codigo-content {
+  display: flex !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 8px !important;
+  border-left: 2px solid #F1CC00 !important;
+  overflow: hidden !important;
+}
+
+.line-numbers {
+  background: rgba(0, 0, 0, 0.3) !important;
+  padding: 16px 12px !important;
+  border-right: 1px solid rgba(241, 204, 0, 0.2) !important;
+  font-family: 'Space Grotesk', monospace !important;
+  font-size: 12px !important;
+  color: rgba(243, 241, 232, 0.6) !important;
+  line-height: 1.5 !important;
+  min-width: 40px !important;
+  text-align: right !important;
+  user-select: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.line-number {
+  height: 1.5em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  font-weight: 500 !important;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+}
+
+.codigo-text {
+  flex: 1;
+  overflow-x: visible;
+}
+
+.codigo-pre {
+  margin: 0 !important;
+  padding: 16px 20px !important;
+  background: transparent !important;
+  color: #F3F1E8 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  font-family: 'Space Grotesk', monospace !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  overflow-x: auto !important;
+}
+
+/* Quebras de página para PDF */
+@media print {
+  .codigo-container {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .codigo-header {
+    padding: 10px 12px;
+    gap: 12px;
+  }
+  
+  .codigo-info {
+    gap: 12px;
+  }
+  
+  .codigo-titulo {
+    font-size: 13px;
+  }
+  
+  .codigo-linguagem {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .line-numbers {
+    padding: 12px 8px;
+    min-width: 35px;
+  }
+  
+  .codigo-pre {
+    padding: 12px;
+    font-size: 12px;
+  }
+}
