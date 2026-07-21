@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CPF Sender API
  * Description: Envia CPF de clientes e afiliados para endpoint externo (Edwiser Bridge + Lab Resumos Parceiros)
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Lab Resumos
  * Text Domain: cpf-sender-api
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) exit;
 // SEÇÃO 1: CONSTANTES E ATIVAÇÃO
 // =============================================================================
 
-define('CPF_SENDER_VERSION', '2.1.0');
+define('CPF_SENDER_VERSION', '2.2.0');
 define('CPF_SENDER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CPF_SENDER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -123,7 +123,11 @@ function cpf_sender_activate() {
     add_option('cpf_sender_telegram_enabled', '1');
     add_option('cpf_sender_telegram_webhook_url', 'https://automation.guruja.com.br/webhook/b87b165b-6017-4156-97a6-1431cec04356');
     add_option('cpf_sender_telegram_delay_minutes', 5);
-    
+
+    // Opções de verificação da escrita (API própria — o Hookdeck só confirma recebimento, não a escrita real)
+    add_option('cpf_sender_verify_api_url', 'https://api-laboratorio-resumos.azurewebsites.net/api/v1/hookdeck/lab-user/document/status');
+    add_option('cpf_sender_verify_api_key', '');
+
     // Agendar limpeza de logs antigos
     if (!wp_next_scheduled('cpf_sender_cleanup_logs')) {
         wp_schedule_event(time(), 'daily', 'cpf_sender_cleanup_logs');
@@ -146,6 +150,7 @@ function cpf_sender_deactivate() {
     wp_clear_scheduled_hook('cpf_sender_cleanup_logs');
     wp_clear_scheduled_hook('cpf_sender_check_pending');
     wp_clear_scheduled_hook('cpf_sender_telegram_check');
+    wp_clear_scheduled_hook('cpf_sender_verify_write');
 }
 
 /**
@@ -482,6 +487,19 @@ function cpf_sender_register_settings() {
         'sanitize_callback' => 'absint',
         'default' => 5
     ));
+
+    // Verificação da escrita (API própria)
+    register_setting('cpf_sender_settings', 'cpf_sender_verify_api_url', array(
+        'type' => 'string',
+        'sanitize_callback' => 'esc_url_raw',
+        'default' => 'https://api-laboratorio-resumos.azurewebsites.net/api/v1/hookdeck/lab-user/document/status'
+    ));
+
+    register_setting('cpf_sender_settings', 'cpf_sender_verify_api_key', array(
+        'type' => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+        'default' => ''
+    ));
 }
 
 function cpf_sender_admin_scripts($hook) {
@@ -590,7 +608,15 @@ function cpf_sender_save_settings_handler() {
         if ($delay < 1) $delay = 5;
         update_option('cpf_sender_telegram_delay_minutes', $delay);
     }
-    
+
+    if (isset($_POST['cpf_sender_verify_api_url'])) {
+        update_option('cpf_sender_verify_api_url', esc_url_raw($_POST['cpf_sender_verify_api_url']));
+    }
+
+    if (isset($_POST['cpf_sender_verify_api_key'])) {
+        update_option('cpf_sender_verify_api_key', sanitize_text_field($_POST['cpf_sender_verify_api_key']));
+    }
+
     // Redirecionar de volta com mensagem de sucesso
     $redirect_url = add_query_arg(
         array(
@@ -857,7 +883,41 @@ function cpf_sender_settings_page() {
                         </td>
                     </tr>
                 </table>
-                
+
+                <hr>
+                <h2>Verificação da Escrita (API própria)</h2>
+                <p class="description">O Hookdeck confirma só o recebimento (ack assíncrono), não a escrita real do CPF. Após o envio, o plugin confirma aqui se o document foi mesmo gravado antes de marcar como sucesso.</p>
+
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="cpf_sender_verify_api_url">URL de verificação</label>
+                        </th>
+                        <td>
+                            <input type="url"
+                                   id="cpf_sender_verify_api_url"
+                                   name="cpf_sender_verify_api_url"
+                                   value="<?php echo esc_attr(get_option('cpf_sender_verify_api_url', 'https://api-laboratorio-resumos.azurewebsites.net/api/v1/hookdeck/lab-user/document/status')); ?>"
+                                   class="regular-text" />
+                            <p class="description">Endpoint GET da API que confirma se o document foi gravado</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
+                            <label for="cpf_sender_verify_api_key">Chave de verificação</label>
+                        </th>
+                        <td>
+                            <input type="password"
+                                   id="cpf_sender_verify_api_key"
+                                   name="cpf_sender_verify_api_key"
+                                   value="<?php echo esc_attr(get_option('cpf_sender_verify_api_key', '')); ?>"
+                                   class="regular-text" />
+                            <p class="description">Enviada no header X-Cpf-Status-Key. Se vazia, a verificação é pulada (comportamento antigo)</p>
+                        </td>
+                    </tr>
+                </table>
+
                 <?php submit_button('Salvar Configurações'); ?>
                 
                 <hr>
@@ -1269,7 +1329,9 @@ function cpf_sender_process_response($user_id, $email, $cpf, $response, $endpoin
     $http_code = wp_remote_retrieve_response_code($response);
     $body = wp_remote_retrieve_body($response);
     
-    // Sucesso (2xx)
+    // "Sucesso" (2xx) do Hookdeck — é só o ack de recebimento na fila dele, NÃO confirma
+    // que a nossa API gravou o document. A entrega ao destino é assíncrona. Por isso não
+    // marcamos sucesso aqui: agendamos uma verificação real contra a API de status.
     if ($http_code >= 200 && $http_code < 300) {
         cpf_sender_save_log(array(
             'user_id'          => $user_id,
@@ -1279,24 +1341,14 @@ function cpf_sender_process_response($user_id, $email, $cpf, $response, $endpoin
             'http_method'      => $method,
             'http_status_code' => $http_code,
             'response_body'    => $body,
-            'error_message'    => null,
-            'status'           => 'success',
+            'error_message'    => "[{$type}] Hookdeck aceitou (ack) — aguardando confirmação da escrita",
+            'status'           => 'pending',
             'attempts'         => $attempts,
             'type'             => $type
         ));
-        
-        // Limpar todas as metas de controle
-        update_user_meta($user_id, $status_key, 'success');
-        update_user_meta($user_id, $sent_at_key, current_time('mysql'));
-        delete_user_meta($user_id, $error_key);
-        delete_user_meta($user_id, $pending_since_key);
-        delete_user_meta($user_id, $attempts_key);
-        
-        // Limpar CPF temporário de afiliado
-        if ($type === 'afiliado') {
-            delete_user_meta($user_id, '_cpf_sender_affiliate_cpf');
-        }
-        
+
+        cpf_sender_schedule_write_verification($user_id, $email, $type, 1);
+
         return true;
     }
     
@@ -1324,8 +1376,137 @@ function cpf_sender_process_response($user_id, $email, $cpf, $response, $endpoin
     if ($attempts >= CPF_SENDER_MAX_ATTEMPTS) {
         cpf_sender_send_alert($user_id, $email, "[{$type}] " . $error_message);
     }
-    
+
     return false;
+}
+
+/**
+ * Verificação da escrita real do document — o Hookdeck só confirma recebimento
+ * (ack assíncrono), então depois de um envio "aceito" agendamos esta checagem
+ * contra a nossa própria API antes de marcar como sucesso de verdade.
+ */
+const CPF_SENDER_VERIFY_DELAY_SECONDS = 15;
+const CPF_SENDER_VERIFY_MAX_ATTEMPTS = 3;
+
+function cpf_sender_schedule_write_verification($user_id, $email, $type, $attempt) {
+    wp_schedule_single_event(
+        time() + CPF_SENDER_VERIFY_DELAY_SECONDS,
+        'cpf_sender_verify_write',
+        array($user_id, $email, $type, $attempt)
+    );
+}
+
+/**
+ * Consulta a API própria para saber se o document já foi gravado.
+ *
+ * @return bool|null true = gravado, false = não gravado, null = não foi possível checar
+ *                    (API não configurada ou erro de rede — não deve penalizar o envio)
+ */
+function cpf_sender_check_document_written($email) {
+    $api_url = get_option('cpf_sender_verify_api_url', '');
+    $api_key = get_option('cpf_sender_verify_api_key', '');
+
+    if (empty($api_url) || empty($api_key)) {
+        return null;
+    }
+
+    $response = wp_remote_get(
+        add_query_arg('email', rawurlencode($email), $api_url),
+        array(
+            'headers'   => array('X-Cpf-Status-Key' => $api_key),
+            'timeout'   => 15,
+            'sslverify' => true,
+        )
+    );
+
+    if (is_wp_error($response)) {
+        error_log('[CPF Sender Verify] Erro ao consultar API de status: ' . $response->get_error_message());
+        return null;
+    }
+
+    if (wp_remote_retrieve_response_code($response) !== 200) {
+        return null;
+    }
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+    if (!is_array($data)) {
+        return null;
+    }
+
+    return !empty($data['document_filled']);
+}
+
+/**
+ * Handler da verificação agendada.
+ */
+add_action('cpf_sender_verify_write', 'cpf_sender_execute_verify_write', 10, 4);
+
+function cpf_sender_execute_verify_write($user_id, $email, $type = 'cliente', $attempt = 1) {
+    $status_key        = ($type === 'afiliado') ? '_cpf_sender_affiliate_status' : '_cpf_sender_status';
+    $sent_at_key        = ($type === 'afiliado') ? '_cpf_sender_affiliate_sent_at' : '_cpf_sender_sent_at';
+    $error_key          = ($type === 'afiliado') ? '_cpf_sender_affiliate_last_error' : '_cpf_sender_last_error';
+    $pending_since_key  = ($type === 'afiliado') ? '_cpf_sender_affiliate_pending_since' : '_cpf_sender_pending_since';
+    $attempts_key       = ($type === 'afiliado') ? '_cpf_sender_affiliate_attempts' : '_cpf_sender_attempts';
+
+    $confirmed = cpf_sender_check_document_written($email);
+
+    // Não foi possível checar (API de verificação não configurada ou fora do ar):
+    // não penaliza o envio — mantém como estava e deixa o ciclo normal de backoff cuidar.
+    if ($confirmed === null) {
+        return;
+    }
+
+    if ($confirmed === true) {
+        update_user_meta($user_id, $status_key, 'success');
+        update_user_meta($user_id, $sent_at_key, current_time('mysql'));
+        delete_user_meta($user_id, $error_key);
+        delete_user_meta($user_id, $pending_since_key);
+        delete_user_meta($user_id, $attempts_key);
+
+        if ($type === 'afiliado') {
+            delete_user_meta($user_id, '_cpf_sender_affiliate_cpf');
+        }
+
+        cpf_sender_save_log(array(
+            'user_id'          => $user_id,
+            'user_email'       => $email,
+            'cpf_masked'       => '***',
+            'endpoint_url'     => 'Verificação (API de status)',
+            'http_method'      => 'GET',
+            'http_status_code' => 200,
+            'response_body'    => null,
+            'error_message'    => "[{$type}] Escrita do document confirmada",
+            'status'           => 'success',
+            'attempts'         => 0,
+            'type'             => $type,
+        ));
+        return;
+    }
+
+    // $confirmed === false: Hookdeck recebeu, mas a escrita ainda não apareceu no banco.
+    // A entrega assíncrona pode só estar demorando — tenta checar de novo algumas vezes
+    // antes de tratar como falha de verdade.
+    if ($attempt < CPF_SENDER_VERIFY_MAX_ATTEMPTS) {
+        cpf_sender_schedule_write_verification($user_id, $email, $type, $attempt + 1);
+        return;
+    }
+
+    update_user_meta($user_id, $status_key, 'error');
+    update_user_meta($user_id, $error_key, 'Hookdeck aceitou o envio, mas a escrita do document não foi confirmada');
+
+    cpf_sender_save_log(array(
+        'user_id'          => $user_id,
+        'user_email'       => $email,
+        'cpf_masked'       => '***',
+        'endpoint_url'     => 'Verificação (API de status)',
+        'http_method'      => 'GET',
+        'http_status_code' => null,
+        'response_body'    => null,
+        'error_message'    => "[{$type}] Hookdeck aceitou mas escrita não confirmada após " . CPF_SENDER_VERIFY_MAX_ATTEMPTS . " checagens",
+        'status'           => 'error',
+        'attempts'         => absint(get_user_meta($user_id, $attempts_key, true)),
+        'type'             => $type,
+    ));
 }
 
 // =============================================================================
