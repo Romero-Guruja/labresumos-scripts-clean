@@ -224,7 +224,7 @@ if (!class_exists('LR_Telegram')) {
          * @return bool True se a chamada foi disparada (não garante entrega — é non-blocking).
          */
         public static function alert($evento, $descricao = '') {
-            if (get_option('cpf_sender_telegram_enabled', '1') !== '1') {
+            if (get_option('lr_core_telegram_enabled', '1') !== '1') {
                 return false;
             }
 
