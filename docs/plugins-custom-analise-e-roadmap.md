@@ -180,14 +180,14 @@ Moodle. Só vai pra prod com esses dois verdes no staging (com usuário de teste
 
 Ordem por **valor × segurança**. Cada fase é independente e reversível. F0 é pré-requisito.
 
-### F0 — Rede de segurança & versionamento  · risco: ~zero (só leitura/backup)
+### F0 — Rede de segurança & versionamento  · risco: ~zero (só leitura/backup) — ✅ FEITO 2026-07-21
 - **Exportar os 23 snippets WPCode para o git** (`docs/wpcode-snippets/` ou plugin
   `lab-resumos-snippets-export`), com id/título/tipo/localização — fim do "código fora do git".
 - Snapshot de baseline: versões dos plugins, `wp_options wpcode_snippets`, lista de crons.
 - `wp db export` do prefixo prod + confirmar backups offline.
 - **Entregável:** snippets versionados + baseline documentado. **Nada muda em prod.**
 
-### F1 — `lab-resumos-core` (biblioteca comum)  · risco: BAIXO (aditivo)
+### F1 — `lab-resumos-core` (biblioteca comum)  · risco: BAIXO (aditivo) — ✅ FEITO 2026-07-21
 - Criar mu-plugin `lab-resumos-core` com: `LR_CPF::clean/validate/format` (usar o algoritmo
   forte do `acessos`), `LR_HPOS::enabled`, `LR_Log`, `LR_WhatsApp::format_phone/build_url`,
   `LR_Telegram::alert`, `LR_Autologin` (wrapper).
