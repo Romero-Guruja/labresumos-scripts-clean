@@ -172,21 +172,26 @@ $V option get eb_connection --format=json > ~/staging-eb-backup.json
    pagamento. Evitar horário de pico de vendas.
 3. **Deploy de arquivo por `rsync -c` com `--dry-run` primeiro** (ver a diff exata) — nunca
    editar direto no servidor. Código vem do git.
-4. **Cutover reversível — ⚠️ ordem corrigida após incidente real no F2, refinada no F3c (ver
-   §9):** quando o snippet original **não tem guard** `function_exists` nas funções que ele
-   define (é o caso de quase todos — só a *nossa cópia nova* tem guard, o snippet original
-   nunca teve), a sobreposição "os dois ativos ao mesmo tempo" **causa fatal de redeclare**,
-   não é segura. **Desativar o snippet velho PRIMEIRO, só depois ativar o plugin novo** — o
-   gap momentâneo sem a função é seguro (consumidores já fazem `function_exists` e falham
-   "bonito"); dois definindo a mesma função ao mesmo tempo não é. **Desativar de verdade
-   inclui o `post_status` (não só remover do índice `wp_options.wpcode_snippets`)** — via
-   WP-CLI, `WPCode_Snippet::activate()/deactivate()` só persiste o `post_status` com
-   `--user=<id de admin>` (sem usuário no contexto, `current_user_can('wpcode_activate_snippets')`
-   falha e a chamada é um no-op silencioso pro post_status, mesmo a remoção do índice
-   funcionando por fora). **Fazer as duas partes (índice + post_status) ANTES de ativar o
-   plugin novo** — corrigir o `post_status` depois, com o plugin novo já ativo, pode
-   disparar o mesmo fatal de redeclare (o `save()` do WPCode reconstrói o cache internamente
-   e re-avalia o snippet antigo nesse processo).
+4. **Cutover reversível — ⚠️ ordem corrigida após incidentes reais no F2/F3c/F3d (ver §9):**
+   quando o snippet original **não tem guard** `function_exists` nas funções que ele define
+   (é o caso de quase todos — só a *nossa cópia nova* tem guard, o snippet original nunca
+   teve), a sobreposição "os dois ativos ao mesmo tempo" **causa fatal de redeclare**, não é
+   segura — **nem por um instante, nem "só pra checar rapidinho"**. **Desativar de verdade o
+   snippet velho 100% (índice `wp_options.wpcode_snippets` **e** `post_status`) ANTES de
+   ativar o plugin novo** — nessa ordem, sem exceção, mesmo pra um teste rápido. O gap
+   momentâneo sem a função é seguro (consumidores já fazem `function_exists` e falham
+   "bonito"); dois definindo a mesma função ao mesmo tempo não é, e o F3d confirmou que até
+   uma janela de "só pra checar" é suficiente pra disparar o fatal.
+   **Como corrigir o `post_status` de forma confiável:** `WPCode_Snippet::activate()/deactivate()`
+   via WP-CLI só persiste com `--user=<id de admin>` (sem usuário no contexto,
+   `current_user_can('wpcode_activate_snippets')` falha e é um no-op silencioso) — **e mesmo
+   assim, rodar pra vários ids na mesma chamada em loop não é confiável** (só o primeiro
+   costuma persistir de verdade). O jeito que funcionou 100% das vezes: **SQL direto**
+   (`wp db query "UPDATE wp_posts SET post_status='draft' WHERE ID IN (...)"`), que
+   bypassa toda a lógica interna do WPCode. Depois de qualquer fatal de redeclare, **conferir
+   o índice COMPLETO** (não só os ids do grupo da vez) — o auto-recovery do WPCode pode pegar
+   qualquer snippet de vítima colateral (já aconteceu com `#1011` três vezes e, uma vez, com
+   um snippet órfão só no clone staging).
 5. **Purga de cache:** `wp litespeed-purge all && wp cache flush`.
 6. **Verificação imediata pós-deploy** (checklist §8 de cada fase): site 200, checkout
    carrega, um pedido de teste, **matrícula no Moodle funcionando**, magic link funcionando.
@@ -242,9 +247,9 @@ desativa os snippets do grupo):
   zero incidente, confirma que a correção de método do §9 funciona.
 - `lab-resumos-checkout`: #1123, #937, #1319 — **usar `LR_CPF` do core** (elimina o CPF
   fraco). — ✅ FEITO 2026-07-21 (F3c). Achado importante de método, ver §9.
-- `lab-resumos-admin-tools` (ou core): #2755, #1742, #1650 (→ `LR_Telegram`, ver nota sobre
-  a option `lr_core_telegram_enabled` no §9), #940. `#1650` **define função nomeada sem
-  guard** — mesma regra de ordem.
+- `lab-resumos-admin-tools`: #2755, #1742, #1650 (→ `LR_Telegram`), #940. — ✅ FEITO
+  2026-07-21 (F3d). Achado de segurança (token Cloudflare) + mais uma recorrência do
+  #1011/rebuild, ver §9.
 - **NF-e** #1087 → dentro de `acessos` ou plugin pequeno. **Define função nomeada sem
   guard** — mesma regra de ordem.
 - **#1294 (SVG upload):** decidir — sanitizar SVG (risco XSS) ou remover se não usam. Sem
@@ -401,6 +406,48 @@ certo nos 3 cenários (vazio/inválido/válido), filtro de reordenação de camp
 de telefone bidirecional num pedido de teste real (com rollback do valor original), hooks
 JS/filtro registrados, regressão de F0-F3b confirmada intacta. `fatal-errors-*.log`: 1 linha
 nova (a do redeclare acima, auto-resolvida, sem repetição).
+
+### F3d — admin-tools → plugin `lab-resumos-admin-tools`
+4 snippets: `#2755` (botão "Limpar Cache" Cloudflare+LiteSpeed+Redis), `#1742` (contador
+acessa wp-admin), `#940` (remove Font Awesome duplicado do Edwiser) e `#1650` (monitor de
+erros do Edwiser → Telegram, migrado pra `LR_Telegram` do core, mesmo padrão do F3c com
+`lr_send_edwiser_telegram_alert` eliminada). Risco mais baixo desde o F3a — nenhum toca
+checkout/pagamento.
+
+**🔴 Achado de segurança:** `#2755` tinha um **token de API da Cloudflare hardcoded** no
+código (`define('LAB_CF_API_TOKEN', 'cfut_...')`). Copiar fielmente pro plugin versionado
+mandaria o token pro histórico do git, permanente. Extraído pro `wp-config.php` do servidor
+(staging + prod, **fora do git**) via `define()` — mesmo padrão já usado pra `WP_REDIS_*`
+nesse arquivo. O plugin lê com `defined('LAB_CF_API_TOKEN') ? LAB_CF_API_TOKEN : ''`.
+
+**⚠️ Mais uma vez o `#1011` foi vítima colateral** (3ª vez: F2, F3c-fix, agora F3d) — e apareceu
+uma 2ª vítima nova, **exclusiva do staging**: um snippet órfão `#2737` ("DEBUG: captura
+queries AJAX do Carregar mais", de 23/06, marcado "REMOVER depois de resolver" no próprio
+comentário) que estava `post_status=publish` **só no clone staging** (em prod já estava
+`draft`, corretamente) — a reconstrução do cache do WPCode trouxe ele de volta pro índice
+só lá. Confirma que o clone `venture` acumula esse tipo de drift de `post_status`
+(análogo ao post `#3039` ausente, achado no F3a) — sempre conferir o índice completo depois
+de qualquer fatal, não só os 4-5 snippets do grupo da vez.
+
+**Lição de método definitiva** (refina o §6.4 outra vez): não bastava desativar o snippet
+antes de ativar o plugin — **ativar o plugin novo enquanto o snippet velho AINDA está no ar,
+mesmo "só pra checar rapidinho antes de desativar"**, já é o suficiente pra disparar o
+redeclare (confirmado: um fatal de `lr_monitor_edwiser_bridge_requests` aconteceu bem nessa
+janela). Daqui pra frente: **nunca ativar o plugin novo com o snippet velho ainda ativo**,
+nem por um instante de checagem — desativar 100% primeiro (índice + `post_status`), só
+depois ativar. Também: `WPCode_Snippet::deactivate()`/`activate()` **não é confiável em loop
+batch** (rodar pra 3-4 ids na mesma chamada `wp eval`, só o primeiro persiste o
+`post_status` de verdade) — mais previsível corrigir `post_status` via **SQL direto**
+(`UPDATE wp_posts SET post_status=...`, bypassa toda a lógica interna do WPCode) do que via
+`WPCode_Snippet`, mesmo com `--user`.
+
+Verificado em prod: filtro do contador nos 2 cenários (com/sem capability, usuário de teste
+removido depois), hook do Font Awesome registrado, **clique real no botão de limpar cache**
+(Cloudflare ✅ LiteSpeed ✅ Redis ✅, ação seguro/reversível), `LR_Telegram`/cron do Edwiser
+sem duplicar, regressão F1-F3c intacta. `fatal-errors-*.log`: 2 linhas novas — a do redeclare
+acima (auto-resolvida) e um `WC_Admin_Reports::register_orders_hook_handlers()` do próprio
+WooCommerce (não relacionado ao nosso código, 1 ocorrência isolada, provável resquício das
+atualizações de plugin que o Romero fez por conta própria durante o F3c).
 
 ### Fix — `LR_Telegram::alert()` desacoplado do `cpf-sender-api`
 Achado na mesma auditoria pós-F3a: a option de habilitar/desabilitar (`cpf_sender_telegram_enabled`)
