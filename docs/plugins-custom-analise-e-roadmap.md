@@ -172,13 +172,21 @@ $V option get eb_connection --format=json > ~/staging-eb-backup.json
    pagamento. Evitar horário de pico de vendas.
 3. **Deploy de arquivo por `rsync -c` com `--dry-run` primeiro** (ver a diff exata) — nunca
    editar direto no servidor. Código vem do git.
-4. **Cutover reversível — ⚠️ ordem corrigida após incidente real no F2 (ver §9):** quando o
-   snippet original **não tem guard** `function_exists` nas funções que ele define (é o caso
-   de quase todos — só a *nossa cópia nova* tem guard, o snippet original nunca teve), a
-   sobreposição "os dois ativos ao mesmo tempo" **causa fatal de redeclare**, não é segura.
-   **Desativar o snippet velho PRIMEIRO, só depois ativar o plugin novo** — o gap momentâneo
-   sem a função é seguro (consumidores já fazem `function_exists` e falham "bonito"); dois
-   definindo a mesma função ao mesmo tempo não é.
+4. **Cutover reversível — ⚠️ ordem corrigida após incidente real no F2, refinada no F3c (ver
+   §9):** quando o snippet original **não tem guard** `function_exists` nas funções que ele
+   define (é o caso de quase todos — só a *nossa cópia nova* tem guard, o snippet original
+   nunca teve), a sobreposição "os dois ativos ao mesmo tempo" **causa fatal de redeclare**,
+   não é segura. **Desativar o snippet velho PRIMEIRO, só depois ativar o plugin novo** — o
+   gap momentâneo sem a função é seguro (consumidores já fazem `function_exists` e falham
+   "bonito"); dois definindo a mesma função ao mesmo tempo não é. **Desativar de verdade
+   inclui o `post_status` (não só remover do índice `wp_options.wpcode_snippets`)** — via
+   WP-CLI, `WPCode_Snippet::activate()/deactivate()` só persiste o `post_status` com
+   `--user=<id de admin>` (sem usuário no contexto, `current_user_can('wpcode_activate_snippets')`
+   falha e a chamada é um no-op silencioso pro post_status, mesmo a remoção do índice
+   funcionando por fora). **Fazer as duas partes (índice + post_status) ANTES de ativar o
+   plugin novo** — corrigir o `post_status` depois, com o plugin novo já ativo, pode
+   disparar o mesmo fatal de redeclare (o `save()` do WPCode reconstrói o cache internamente
+   e re-avalia o snippet antigo nesse processo).
 5. **Purga de cache:** `wp litespeed-purge all && wp cache flush`.
 6. **Verificação imediata pós-deploy** (checklist §8 de cada fase): site 200, checkout
    carrega, um pedido de teste, **matrícula no Moodle funcionando**, magic link funcionando.
@@ -233,7 +241,7 @@ desativa os snippets do grupo):
   2026-07-21 (F3b). Cutover na ordem corrigida (desativa os 5 snippets → ativa o plugin) —
   zero incidente, confirma que a correção de método do §9 funciona.
 - `lab-resumos-checkout`: #1123, #937, #1319 — **usar `LR_CPF` do core** (elimina o CPF
-  fraco). #1123/#937 **definem função nomeada sem guard** — mesma regra de ordem.
+  fraco). — ✅ FEITO 2026-07-21 (F3c). Achado importante de método, ver §9.
 - `lab-resumos-admin-tools` (ou core): #2755, #1742, #1650 (→ `LR_Telegram`, ver nota sobre
   a option `lr_core_telegram_enabled` no §9), #940. `#1650` **define função nomeada sem
   guard** — mesma regra de ordem.
@@ -353,6 +361,47 @@ bloqueia acesso anônimo no clone `venture` ("You need to login to access that p
 chamando a função diretamente via `wp eval` (confirma que seta o usuário certo) e testando
 os outros 4 comportamentos normalmente. Zero erro novo em `fatal-errors-*.log`.
 
+### F3c — checkout → plugin `lab-resumos-checkout` (maior risco do F3 até aqui, e o que mais
+### ensinou sobre o mecanismo interno do WPCode)
+3 snippets: `#1123` (validação de CPF — gate do `woocommerce_checkout_process`), `#937`
+(reordena CPF no Fluid Checkout), `#1319` (sincroniza billing_phone↔billing_cellphone, zero
+função nomeada). **Única migração do F3 que não é cópia 100% fiel:** `#1123` elimina a cópia
+local do algoritmo de CPF e passa a chamar `LR_CPF::validate()` do core — verificado ANTES de
+escrever código com uma bateria de 14 CPFs comparando as duas implementações direto em prod
+(leitura), 0 divergências; `lab_validar_cpf()` não tinha nenhum outro consumidor (grep
+confirmado), seguro eliminar.
+
+**Dois achados de método nesta fase, os dois self-resolvidos sem dano permanente:**
+1. **No meio do teste em staging, o Romero rodou (por conta própria, sem relação com este
+   trabalho) uma atualização geral de plugins** — Elementor/Elementor Pro saltaram
+   3.34.x→4.2.0, WooCommerce/WPForms/Pagar.me/NF-e também atualizaram, causando um fatal
+   transitório do próprio WordPress/Jetpack Autoloader (vendor incompleto durante a
+   atualização) que se autorresolveu em segundos. **Prod não foi afetado** nos plugins
+   críticos (só 3 menores/cosméticos atualizaram sozinhos também em prod). Confirmar sempre
+   com o Romero antes de assumir que uma mudança de versão inesperada é um bug nosso.
+2. **O achado mais importante:** a atualização também trouxe o `insert-headers-and-footers`
+   (WPCode) de 2.3.2.1→2.3.7, que mudou o comportamento da API de ativar/desativar snippet —
+   `WPCode_Snippet::activate()/deactivate()` (e por extensão `save()`) agora checam
+   `current_user_can('wpcode_activate_snippets')`; sem usuário no contexto (padrão do
+   `wp eval`/`wp eval-file` via SSH), a checagem falha e o método **silenciosamente não toca
+   o `post_status`** — mas a remoção manual do índice `wp_options.wpcode_snippets` (que faço
+   via array direto, não pela classe) continua funcionando por fora, então a desativação
+   *funcional* aconteceu, só o `post_status` ficou incoerente (`publish` num snippet
+   funcionalmente morto). Fix: rodar como admin — `wp --user=1 eval ...`. **Pior**: corrigir
+   isso *depois* de já ter ativado o plugin novo causou um fatal real (redeclare de
+   `labresumos_fix_cpf_order_fluid_checkout`) — o `save()` do WPCode reconstrói o cache
+   internamente e nesse processo re-avalia o snippet antigo, que ainda tinha `post_status`
+   'publish' até aquele exato momento. Sem dano colateral desta vez (confirmado: índice e
+   status dos 8 snippets restantes todos corretos depois) — mas por pouco não repetiu o
+   incidente do F2. Regra adicionada ao §6.4: desativar de verdade (índice **+**
+   `post_status`, com `--user=<admin>`) **antes** de ativar o plugin novo, nas duas partes.
+
+Verificado em prod: bateria completa de CPF válido/inválido, `wc_add_notice` disparando
+certo nos 3 cenários (vazio/inválido/válido), filtro de reordenação de campo, sincronização
+de telefone bidirecional num pedido de teste real (com rollback do valor original), hooks
+JS/filtro registrados, regressão de F0-F3b confirmada intacta. `fatal-errors-*.log`: 1 linha
+nova (a do redeclare acima, auto-resolvida, sem repetição).
+
 ### Fix — `LR_Telegram::alert()` desacoplado do `cpf-sender-api`
 Achado na mesma auditoria pós-F3a: a option de habilitar/desabilitar (`cpf_sender_telegram_enabled`)
 pertencia ao plugin `cpf-sender-api` — inofensivo enquanto nada consumia `LR_Telegram`, mas ia
@@ -400,4 +449,9 @@ curl -s -o /dev/null -w "%{http_code}\n" https://labresumos.com.br/finalizar-com
 
 > **Snippets WPCode** vivem no `wp_options.wpcode_snippets`. Desativar corretamente exige 2
 > passos (marcar draft **e** remover do índice do option) — ver
-> `docs/scripts/desativar_paliativo_wpcode_2975.php`.
+> `docs/scripts/desativar_paliativo_wpcode_2975.php`. **Desde a atualização do WPCode pra
+> 2.3.7 (achado no F3c):** se usar `WPCode_Snippet::activate()/deactivate()` via WP-CLI, rodar
+> com `--user=<id de admin>` (ex.: `wp --user=1 eval ...`) — sem usuário no contexto, a
+> checagem de capability interna falha e o `post_status` não persiste (o script manual de
+> 2 passos acima, que edita o array do option direto, não depende disso e continua
+> funcionando sozinho pra parte funcional).
