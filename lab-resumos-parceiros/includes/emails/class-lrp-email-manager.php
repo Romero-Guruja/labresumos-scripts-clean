@@ -302,12 +302,20 @@ class LRP_Email_Manager {
             return;
         }
 
+        $closing = LRP_Closing::get($closing_id);
+        if (!$closing) {
+            lrp_log('Email NF aprovada: fechamento não encontrado', ['closing_id' => $closing_id], 'error');
+            return;
+        }
+
         $subject = __('✅ NF aprovada! Pagamento em breve', 'lab-resumos-parceiros');
-        
+
         $content = $this->get_template('invoice-approved', [
+            'affiliate'      => $affiliate,
+            'closing'        => $closing,
             'affiliate_name' => $affiliate->get_display_name(),
         ]);
-        
+
         $this->send($affiliate->get_email(), $subject, $content);
     }
 
@@ -324,16 +332,24 @@ class LRP_Email_Manager {
             return;
         }
 
+        $closing = LRP_Closing::get($closing_id);
+        if (!$closing) {
+            lrp_log('Email NF rejeitada: fechamento não encontrado', ['closing_id' => $closing_id], 'error');
+            return;
+        }
+
         $subject = __('⚠️ NF rejeitada - Ação necessária', 'lab-resumos-parceiros');
-        
+
         $dashboard_url = add_query_arg('tab', 'financial', get_permalink(get_option('lrp_dashboard_page_id')));
-        
+
         $content = $this->get_template('invoice-rejected', [
+            'affiliate'      => $affiliate,
+            'closing'        => $closing,
             'affiliate_name' => $affiliate->get_display_name(),
             'reason'         => $reason,
             'dashboard_url'  => $dashboard_url,
         ]);
-        
+
         $this->send($affiliate->get_email(), $subject, $content);
     }
 
@@ -350,12 +366,18 @@ class LRP_Email_Manager {
         }
 
         $closing = LRP_Closing::get($closing_id);
-        
-        $subject = sprintf(__('💸 Pagamento de R$ %s realizado!', 'lab-resumos-parceiros'), 
+        if (!$closing) {
+            lrp_log('Email pagamento realizado: fechamento não encontrado', ['closing_id' => $closing_id], 'error');
+            return;
+        }
+
+        $subject = sprintf(__('💸 Pagamento de R$ %s realizado!', 'lab-resumos-parceiros'),
             number_format($closing->total_commissions, 2, ',', '.')
         );
-        
-        $content = $this->get_template('payment-completed', [
+
+        $content = $this->get_template('payment-received', [
+            'affiliate'      => $affiliate,
+            'closing'        => $closing,
             'affiliate_name' => $affiliate->get_display_name(),
             'amount'         => wc_price($closing->total_commissions),
             'period'         => sprintf('%02d/%d', $closing->period_month, $closing->period_year),
