@@ -163,8 +163,13 @@ $V option get eb_connection --format=json > ~/staging-eb-backup.json
    pagamento. Evitar horário de pico de vendas.
 3. **Deploy de arquivo por `rsync -c` com `--dry-run` primeiro** (ver a diff exata) — nunca
    editar direto no servidor. Código vem do git.
-4. **Cutover reversível:** preferir "adicionar o novo, depois desligar o velho" (nunca os
-   dois ativos ao mesmo tempo quando redefinem a mesma função → usar guard `function_exists`).
+4. **Cutover reversível — ⚠️ ordem corrigida após incidente real no F2 (ver §9):** quando o
+   snippet original **não tem guard** `function_exists` nas funções que ele define (é o caso
+   de quase todos — só a *nossa cópia nova* tem guard, o snippet original nunca teve), a
+   sobreposição "os dois ativos ao mesmo tempo" **causa fatal de redeclare**, não é segura.
+   **Desativar o snippet velho PRIMEIRO, só depois ativar o plugin novo** — o gap momentâneo
+   sem a função é seguro (consumidores já fazem `function_exists` e falham "bonito"); dois
+   definindo a mesma função ao mesmo tempo não é.
 5. **Purga de cache:** `wp litespeed-purge all && wp cache flush`.
 6. **Verificação imediata pós-deploy** (checklist §8 de cada fase): site 200, checkout
    carrega, um pedido de teste, **matrícula no Moodle funcionando**, magic link funcionando.
@@ -202,20 +207,32 @@ Ordem por **valor × segurança**. Cada fase é independente e reversível. F0 �
   assinatura idêntica**, dentro de `if (!function_exists(...))` (evita fatal de redeclare).
 - **Staging (com Moodle neutralizado/usuário de teste):** gerar magic link → logar →
   confirmar SSO no Moodle; testar os dois consumidores (`acessos` e `recuperacao`).
-- **Cutover prod (ordem importa):** (1) deploy do plugin com guard `function_exists`;
-  (2) confirmar que a função agora vem do plugin; (3) **só então desativar o snippet #1241**.
+- **Cutover prod executado nesta ordem:** (1) deploy do plugin com guard `function_exists`;
+  (2) confirmar que a função agora vem do plugin; (3) desativar o snippet #1241.
   **Rollback:** reativar o snippet #1241 (fica guardado, não apagado).
-- **Verificação:** magic link real + login → Moodle OK.
+- **Verificação:** magic link real (token pré e pós-cutover) OK. SSO no Moodle não foi
+  validado por clique-through (ver §9).
+- **⚠️ Essa ordem causou um fatal real** (ver §9, achado da auditoria) — **daqui pra frente
+  fazer o inverso**: desativar o snippet antes de ativar o plugin (corrigido na regra §6.4).
 
-### F3 — Migrar os snippets "de plugin" para plugins versionados  · risco: BAIXO-MÉDIO (um por vez)
-Agrupar por domínio, migrar **um snippet por vez** (staging → prod → desativa o snippet):
-- `lab-resumos-account`: #1023, #1214, #1283, #1014, #995 (login/conta/thank-you).
-- `lab-resumos-checkout`: #1123, #937, #1319 — **usar `LR_CPF` do core** (elimina o CPF fraco).
-- `lab-resumos-storefront`: #2774, #2382, #2831, #3039, #1422, #953. — ✅ FEITO 2026-07-21 (F3a)
-- `lab-resumos-admin-tools` (ou core): #2755, #1742, #1650 (→ `LR_Telegram`), #940.
-- **NF-e** #1087 → dentro de `acessos` ou plugin pequeno.
-- **#1294 (SVG upload):** decidir — sanitizar SVG (risco XSS) ou remover se não usam.
-- Cada migração testa isolada. Rollback = reativar o snippet.
+### F3 — Migrar os snippets "de plugin" para plugins versionados  · risco: BAIXO-MÉDIO (um grupo por vez)
+Agrupar por domínio (um plugin por grupo), migrar **um grupo por vez** (staging → prod →
+desativa os snippets do grupo):
+- `lab-resumos-storefront`: #2774, #2382, #2831, #3039, #1422, #953. — ✅ FEITO 2026-07-21 (F3a).
+  Nenhum define função nomeada (só closures) → zero risco de redeclare.
+- `lab-resumos-account`: #1023, #1214, #1283, #1014, #995 (login/conta/thank-you). **Define
+  função nomeada sem guard** — cutover deve desativar os snippets ANTES de ativar o plugin
+  (ver §6.4/§9).
+- `lab-resumos-checkout`: #1123, #937, #1319 — **usar `LR_CPF` do core** (elimina o CPF
+  fraco). #1123/#937 **definem função nomeada sem guard** — mesma regra de ordem.
+- `lab-resumos-admin-tools` (ou core): #2755, #1742, #1650 (→ `LR_Telegram`, ver nota sobre
+  a option `lr_core_telegram_enabled` no §9), #940. `#1650` **define função nomeada sem
+  guard** — mesma regra de ordem.
+- **NF-e** #1087 → dentro de `acessos` ou plugin pequeno. **Define função nomeada sem
+  guard** — mesma regra de ordem.
+- **#1294 (SVG upload):** decidir — sanitizar SVG (risco XSS) ou remover se não usam. Sem
+  função nomeada.
+- Cada grupo testa isolado. Rollback = reativar os snippets do grupo.
 
 ### F4 — Performance quick wins  · risco: BAIXO (medível)
 - P1 cron de stats event-driven/incremental; P2 índice/coluna normalizada p/ CPF; P3 cache
@@ -247,7 +264,92 @@ deploy prod com backup+janela → checklist de verificação verde → 24h monit
 
 ---
 
-## 9. Apêndice — comandos úteis
+## 9. Log de execução (o que realmente aconteceu, 21/07/2026)
+
+Todo o F0, F1, F2 e F3a foram executados e deployados em prod na mesma sessão. Commits em
+`labresumos-scripts` (branch `main`, sem push pro remoto ainda — pendente de autorização).
+
+### F0 — achado extra: quase nada estava versionado
+Só `lab-resumos-acessos` estava commitado. `lab-resumos-parceiros`/`lab-resumos-guruja-discount`/
+`lab-resumos-recuperacao-de-vendas` estavam na working tree local mas **nunca tinham sido
+commitados** (não é `.gitignore`) — versões locais confirmadas idênticas às de prod antes de
+commitar. `cpf-sender-api` não existia local nenhum — puxado via `rsync` read-only do servidor.
+Os 23 snippets exportados pra `docs/wpcode-snippets/*.php` (espelho read-only — a fonte de
+runtime segue sendo `wp_options.wpcode_snippets` até cada um ser migrado no F3) + `README.md`
+com inventário + `BASELINE-2026-07-21.md` com versões/crons/mu-plugins. `wp db export` rodado
+em prod (fica em `~/pre-fase0-backups/` no servidor, não sai por conter PII).
+
+### F1 — mu-plugin `lab-resumos-core`
+`LR_CPF`/`LR_HPOS`/`LR_Log`/`LR_WhatsApp`/`LR_Telegram`/`LR_Autologin`, cada classe portada do
+plugin com a implementação mais robusta (CPF = dígito verificador de `acessos`/`parceiros`,
+não o length-check fraco do `discount`). 100% aditivo — deployado sem incidente.
+
+### F2 — autologin → plugin `lab-resumos-autologin` — **causou um incidente real, corrigido**
+Snippet `#1241` portado fielmente (verificado char a char) pro plugin, com guard
+`function_exists` nas 10 funções nomeadas. Cutover: **ativa plugin → desativa snippet**
+(ordem que na hora pareceu segura — ver §6.4 antigo).
+
+**O que deu errado:** o snippet original `#1241` nunca teve guard nenhum. Guard só numa ponta
+não impede o fatal quando o outro lado (sem guard) tenta redeclarar a mesma função — e foi
+exatamente isso que aconteceu, tanto no staging (15:35:01 UTC) quanto em prod (15:43:35 UTC):
+```
+Cannot redeclare lr_generate_autologin_token() (previously declared in .../lab-resumos-autologin.php:88)
+```
+Confirmado em `wp-content/uploads/wc-logs/fatal-errors-*.log` (achado numa auditoria feita
+*depois*, não durante o cutover — o grep por "fatal"/"exception" não pegava porque o log usa
+o nível "CRITICAL", não essas palavras). Efeito colateral: o auto-recovery do próprio WPCode,
+ao detectar o fatal, desativou (draft, fora do índice) o snippet **`#1011`**
+("Reenviar emails NATIVOS do Edwiser Bridge", ferramenta manual de suporte, nada a ver com
+autologin) — confirmado via backup pré-F0 que estava `publish` antes. **Restaurado** nos dois
+ambientes (publish + de volta no índice `wpcode_snippets`), testado OK. Nenhum pedido foi
+afetado (nenhuma linha de `wp_posts` tipo pedido mudou na janela do incidente); nenhum e-mail
+de alerta chegou a disparar.
+
+**Verificação real feita:** token de autologin gerado ANTES do cutover (prova retrocompat com
+links já emitidos) + token gerado DEPOIS (prova o caminho novo) — os dois logaram certo e
+redirecionaram pro checkout. **Não foi possível** validar o clique-through real até o SSO do
+Moodle (Edwiser usa mecanismo próprio de handshake, não um simples cookie compartilhado — não
+achamos o endpoint de gatilho a tempo). Decisão tomada: seguir sem essa checagem específica,
+já que o código do F2 só cuida do login no WordPress — o SSO em si é 100% do Edwiser Bridge,
+não tocado.
+
+**Correção de método daqui pra frente** (aplicada na regra §6.4 e nas notas do §7-F3):
+desativar o snippet velho **antes** de ativar o plugin novo, não o contrário. Praticamente
+todos os grupos que faltam no F3 (`account`, `checkout`, `#1650`, `#1087`) definem função
+nomeada sem guard — o mesmo risco existe lá.
+
+### F3a — storefront → plugin `lab-resumos-storefront`
+6 snippets (`#2774`, `#2382`, `#2831`, `#3039`, `#1422`, `#953`), nenhum com função nomeada →
+zero risco de redeclare, cutover sem incidente. Gotchas de ambiente (não são bugs nossos):
+staging `venture` usa **permalinks planos** (`?page_id=`), sem rewrite pra `/materiais/` ou
+`/loja/` — o teste do redirect loja→materiais só foi possível em prod (permalinks bonitos lá);
+e o post `#3039` no CPT `wpcode` **não existe no staging** (só a entrada no option, que é a
+fonte de runtime real) — clone do staging ficou defasado nesse post específico, sem afetar o
+teste.
+
+### Fix — `LR_Telegram::alert()` desacoplado do `cpf-sender-api`
+Achado na mesma auditoria pós-F3a: a option de habilitar/desabilitar (`cpf_sender_telegram_enabled`)
+pertencia ao plugin `cpf-sender-api` — inofensivo enquanto nada consumia `LR_Telegram`, mas ia
+acoplar "desativar Telegram no cpf-sender" a "silenciar também o alerta do Edwiser" quando
+`#1650` for migrado no F3. Renomeada pra `lr_core_telegram_enabled` (option própria do core).
+Testado em staging (flag novo funciona, flag antigo não afeta mais) e deployado em prod.
+
+### Achado à parte (outro plugin, não relacionado a este roadmap)
+Na mesma auditoria apareceram bugs pré-existentes no gerenciador de e-mails do
+`lab-resumos-parceiros` (afiliados) — corrigidos. Detalhes em
+`docs/lab-resumos-parceiros-emails-corrigidos.md` (não faz parte do roadmap de plugins/snippets,
+é outro domínio do mesmo plugin).
+
+### Pendências abertas
+- Push pro remoto `Romero-Guruja/labresumos-scripts-clean` — aguardando autorização.
+- SSO no Moodle do F2 nunca teve clique-through real confirmado (ver acima).
+- `edwiser-bridge-pro` teve uma rajada de 7 fatais não relacionados ao nosso código
+  ("Call to a member function run() on null", falha transitória na checagem de licença,
+  autolimitada) — tem update disponível (4.2.2→4.2.3) que pode corrigir; não aplicado ainda.
+
+---
+
+## 10. Apêndice — comandos úteis
 
 ```bash
 # acesso
