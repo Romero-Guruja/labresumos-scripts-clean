@@ -1,0 +1,637 @@
+# Portuguese (Brazil) translation for Lab Resumos Parceiros
+# Copyright (C) 2024 Lab Resumos
+# This file is distributed under the same license as the plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Lab Resumos Parceiros 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: Lab Resumos\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# ===== General =====
+msgid "Partner"
+msgstr "Parceiro"
+
+msgid "Partners"
+msgstr "Parceiros"
+
+msgid "Accountant"
+msgstr "Contador"
+
+msgid "Save Changes"
+msgstr "Salvar Alterações"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Delete"
+msgstr "Excluir"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "Filter"
+msgstr "Filtrar"
+
+msgid "Export CSV"
+msgstr "Exportar CSV"
+
+# ===== Status =====
+msgid "Pending"
+msgstr "Pendente"
+
+msgid "Active"
+msgstr "Ativo"
+
+msgid "Inactive"
+msgstr "Inativo"
+
+msgid "Rejected"
+msgstr "Rejeitado"
+
+msgid "Approved"
+msgstr "Aprovado"
+
+msgid "Paid"
+msgstr "Pago"
+
+msgid "Cancelled"
+msgstr "Cancelado"
+
+msgid "Refunded"
+msgstr "Reembolsado"
+
+# ===== Dashboard Tabs =====
+msgid "Overview"
+msgstr "Resumo"
+
+msgid "Links & Coupons"
+msgstr "Links e Cupons"
+
+msgid "Sales"
+msgstr "Vendas"
+
+msgid "My Network"
+msgstr "Minha Rede"
+
+msgid "Financial"
+msgstr "Financeiro"
+
+msgid "Profile"
+msgstr "Perfil"
+
+msgid "Materials"
+msgstr "Materiais"
+
+msgid "FAQ"
+msgstr "FAQ"
+
+# ===== Dashboard Content =====
+msgid "Available Balance"
+msgstr "Saldo Disponível"
+
+msgid "Total Sales"
+msgstr "Vendas Totais"
+
+msgid "Total Commissions"
+msgstr "Comissões Totais"
+
+msgid "Total Received"
+msgstr "Total Recebido"
+
+msgid "This Month"
+msgstr "Este Mês"
+
+msgid "Your Referral Links"
+msgstr "Seus Links de Divulgação"
+
+msgid "Your Discount Coupon"
+msgstr "Seu Cupom de Desconto"
+
+msgid "Your Affiliate Link"
+msgstr "Seu Link de Afiliado"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copy Coupon"
+msgstr "Copiar Cupom"
+
+msgid "Copy Link"
+msgstr "Copiar Link"
+
+msgid "Your commission:"
+msgstr "Sua comissão:"
+
+msgid "Customer discount:"
+msgstr "Desconto para cliente:"
+
+msgid "Cookie duration:"
+msgstr "Duração do cookie:"
+
+msgid "days"
+msgstr "dias"
+
+msgid "guaranteed"
+msgstr "garantida"
+
+msgid "Recommended"
+msgstr "Recomendado"
+
+msgid "Via cookie"
+msgstr "Via cookie"
+
+# ===== Sales =====
+msgid "My Sales"
+msgstr "Minhas Vendas"
+
+msgid "Date"
+msgstr "Data"
+
+msgid "Order"
+msgstr "Pedido"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Sale Value"
+msgstr "Valor da Venda"
+
+msgid "Discount"
+msgstr "Desconto"
+
+msgid "Commission Base"
+msgstr "Base Comissão"
+
+msgid "Commission"
+msgstr "Comissão"
+
+msgid "Coupon"
+msgstr "Cupom"
+
+msgid "Link"
+msgstr "Link"
+
+msgid "Period:"
+msgstr "Período:"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "This month"
+msgstr "Este mês"
+
+msgid "Last month"
+msgstr "Mês passado"
+
+msgid "Last 3 months"
+msgstr "Últimos 3 meses"
+
+msgid "This year"
+msgstr "Este ano"
+
+msgid "No sales found"
+msgstr "Nenhuma venda encontrada"
+
+# ===== Network =====
+msgid "My Partner Network"
+msgstr "Minha Rede de Parceiros"
+
+msgid "Invite Link"
+msgstr "Link de Convite"
+
+msgid "Level 2"
+msgstr "Nível 2"
+
+msgid "Level 3"
+msgstr "Nível 3"
+
+msgid "on sales from your referrals"
+msgstr "sobre vendas dos seus indicados"
+
+msgid "Direct Partners (Level 2)"
+msgstr "Parceiros Diretos (Nível 2)"
+
+msgid "Indirect Partners (Level 3)"
+msgstr "Parceiros Indiretos (Nível 3)"
+
+msgid "Network Commissions"
+msgstr "Comissões de Rede"
+
+msgid "Your network is empty"
+msgstr "Sua rede está vazia"
+
+msgid "%d sales"
+msgstr "%d vendas"
+
+msgid "R$ %s generated"
+msgstr "R$ %s gerado"
+
+msgid "Since: %s"
+msgstr "Desde: %s"
+
+# ===== Financial =====
+msgid "Minimum for withdrawal: R$ %s"
+msgstr "Mínimo para saque: R$ %s"
+
+msgid "Invoice Upload Pending"
+msgstr "Envio de Nota Fiscal Pendente"
+
+msgid "Invoice data:"
+msgstr "Dados para emissão da NF:"
+
+msgid "Recipient:"
+msgstr "Tomador:"
+
+msgid "Tax ID:"
+msgstr "CNPJ:"
+
+msgid "Address:"
+msgstr "Endereço:"
+
+msgid "Description:"
+msgstr "Descrição:"
+
+msgid "Invoice Number:"
+msgstr "Número da NF:"
+
+msgid "Invoice File (PDF):"
+msgstr "Arquivo da NF (PDF):"
+
+msgid "Only PDF files, max 5MB"
+msgstr "Apenas arquivos PDF, máximo 5MB"
+
+msgid "Submit Invoice"
+msgstr "Enviar Nota Fiscal"
+
+msgid "Invoice Under Review"
+msgstr "NF em Análise"
+
+msgid "Invoice Approved - Payment Processing"
+msgstr "NF Aprovada - Pagamento em Processamento"
+
+msgid "Invoice Rejected"
+msgstr "Nota Fiscal Rejeitada"
+
+msgid "Reason:"
+msgstr "Motivo:"
+
+msgid "Submit New Invoice"
+msgstr "Enviar Nova NF"
+
+msgid "Closing History"
+msgstr "Histórico de Fechamentos"
+
+msgid "Period"
+msgstr "Período"
+
+msgid "Value"
+msgstr "Valor"
+
+msgid "Invoice"
+msgstr "NF"
+
+msgid "Paid on"
+msgstr "Pago em"
+
+msgid "Payment Data"
+msgstr "Dados de Pagamento"
+
+msgid "Method:"
+msgstr "Método:"
+
+msgid "Bank Transfer"
+msgstr "Transferência Bancária"
+
+msgid "Key Type:"
+msgstr "Tipo de Chave:"
+
+msgid "PIX Key:"
+msgstr "Chave PIX:"
+
+msgid "Bank:"
+msgstr "Banco:"
+
+msgid "Branch:"
+msgstr "Agência:"
+
+msgid "Account:"
+msgstr "Conta:"
+
+msgid "Holder:"
+msgstr "Titular:"
+
+msgid "Update Data"
+msgstr "Atualizar Dados"
+
+# ===== Profile =====
+msgid "My Profile"
+msgstr "Meu Perfil"
+
+msgid "Personal Data"
+msgstr "Dados Pessoais"
+
+msgid "Display Name"
+msgstr "Nome de Exibição"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Payment Data"
+msgstr "Dados de Pagamento"
+
+msgid "Payment Method"
+msgstr "Método de Pagamento"
+
+msgid "PIX Key Type"
+msgstr "Tipo de Chave PIX"
+
+msgid "Phone"
+msgstr "Telefone"
+
+msgid "Random Key"
+msgstr "Chave Aleatória"
+
+msgid "Leave blank to keep current key"
+msgstr "Deixe em branco para manter a chave atual"
+
+msgid "Account Number"
+msgstr "Número da Conta"
+
+msgid "Account Type"
+msgstr "Tipo de Conta"
+
+msgid "Checking"
+msgstr "Corrente"
+
+msgid "Savings"
+msgstr "Poupança"
+
+msgid "Holder Name"
+msgstr "Nome do Titular"
+
+msgid "Holder CPF/CNPJ"
+msgstr "CPF/CNPJ do Titular"
+
+msgid "Account Information"
+msgstr "Informações da Conta"
+
+msgid "Status:"
+msgstr "Status:"
+
+msgid "Coupon:"
+msgstr "Cupom:"
+
+msgid "Referral Code:"
+msgstr "Código de Referência:"
+
+msgid "Member since:"
+msgstr "Membro desde:"
+
+msgid "Referred by:"
+msgstr "Indicado por:"
+
+msgid "Profile updated successfully!"
+msgstr "Perfil atualizado com sucesso!"
+
+# ===== Materials =====
+msgid "Promotional Materials"
+msgstr "Materiais de Divulgação"
+
+msgid "Download"
+msgstr "Baixar"
+
+msgid "Copy Text"
+msgstr "Copiar Texto"
+
+msgid "No materials available"
+msgstr "Nenhum material disponível"
+
+msgid "Usage Tips"
+msgstr "Dicas de Uso"
+
+# ===== FAQ =====
+msgid "Frequently Asked Questions"
+msgstr "Perguntas Frequentes"
+
+msgid "Still have questions?"
+msgstr "Ainda tem dúvidas?"
+
+msgid "Contact us:"
+msgstr "Entre em contato conosco:"
+
+# ===== Admin =====
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Affiliates"
+msgstr "Afiliados"
+
+msgid "Commissions"
+msgstr "Comissões"
+
+msgid "Payments"
+msgstr "Pagamentos"
+
+msgid "Reports"
+msgstr "Relatórios"
+
+msgid "Settings"
+msgstr "Configurações"
+
+msgid "Activity Logs"
+msgstr "Logs de Atividade"
+
+msgid "Add New"
+msgstr "Adicionar Novo"
+
+msgid "Edit Affiliate"
+msgstr "Editar Afiliado"
+
+msgid "Approve"
+msgstr "Aprovar"
+
+msgid "Reject"
+msgstr "Rejeitar"
+
+msgid "View Details"
+msgstr "Ver Detalhes"
+
+# ===== Settings =====
+msgid "Partner Program Settings"
+msgstr "Configurações do Programa de Parceiros"
+
+msgid "General"
+msgstr "Geral"
+
+msgid "Program Active"
+msgstr "Programa Ativo"
+
+msgid "Enable partner program"
+msgstr "Ativar programa de parceiros"
+
+msgid "Default Commissions"
+msgstr "Comissões Padrão"
+
+msgid "Coupon Commission"
+msgstr "Comissão via Cupom"
+
+msgid "Link Commission"
+msgstr "Comissão via Link"
+
+msgid "Level 2 Commission"
+msgstr "Comissão Nível 2"
+
+msgid "Level 3 Commission"
+msgstr "Comissão Nível 3"
+
+msgid "Commission on sales from direct sub-affiliates"
+msgstr "Comissão sobre vendas de sub-afiliados diretos"
+
+msgid "Discount and Cookie"
+msgstr "Desconto e Cookie"
+
+msgid "Customer Discount"
+msgstr "Desconto para Cliente"
+
+msgid "Discount customer receives when using affiliate coupon"
+msgstr "Desconto que o cliente recebe ao usar cupom de afiliado"
+
+msgid "Cookie Duration"
+msgstr "Duração do Cookie"
+
+msgid "Minimum Withdrawal"
+msgstr "Mínimo para Saque"
+
+msgid "Guruja Integration"
+msgstr "Integração Guruja"
+
+msgid "Default Rule"
+msgstr "Regra Padrão"
+
+msgid "Customer receives higher discount"
+msgstr "Cliente recebe o maior desconto"
+
+msgid "Affiliate coupon always prevails"
+msgstr "Cupom do afiliado sempre prevalece"
+
+msgid "Guruja always prevails"
+msgstr "Guruja sempre prevalece"
+
+msgid "No commission if Guruja applies"
+msgstr "Sem comissão se Guruja aplicar"
+
+msgid "Company Data (for Invoice)"
+msgstr "Dados da Empresa (para NF)"
+
+msgid "Company Name"
+msgstr "Razão Social"
+
+msgid "Emails"
+msgstr "Emails"
+
+msgid "Accountant Email"
+msgstr "Email do Contador"
+
+msgid "Receives notifications of submitted invoices"
+msgstr "Recebe notificações de NFs enviadas"
+
+msgid "Admin Email (notifications)"
+msgstr "Email Admin (notificações)"
+
+msgid "Leave empty to use WordPress admin email"
+msgstr "Deixe vazio para usar o email do admin do WordPress"
+
+msgid "Other Settings"
+msgstr "Outras Configurações"
+
+msgid "Auto Approval"
+msgstr "Aprovação Automática"
+
+msgid "Automatically approve new affiliates"
+msgstr "Aprovar novos afiliados automaticamente"
+
+msgid "Debug Mode"
+msgstr "Modo Debug"
+
+msgid "Enable detailed logs"
+msgstr "Ativar logs detalhados"
+
+msgid "Save Settings"
+msgstr "Salvar Configurações"
+
+# ===== Emails =====
+msgid "Welcome to Lab Resumos Partner Program!"
+msgstr "Bem-vindo ao Programa de Parceiros Lab Resumos!"
+
+msgid "New sale made!"
+msgstr "Nova venda realizada!"
+
+msgid "Monthly closing available"
+msgstr "Fechamento mensal disponível"
+
+msgid "Your Invoice was approved!"
+msgstr "Sua Nota Fiscal foi aprovada!"
+
+msgid "Your Invoice needs correction"
+msgstr "Sua Nota Fiscal precisa de correção"
+
+msgid "Payment completed!"
+msgstr "Pagamento realizado!"
+
+msgid "You have a new partner in your network!"
+msgstr "Você tem um novo parceiro na sua rede!"
+
+msgid "Network commission! Your referral made a sale"
+msgstr "Comissão de rede! Seu indicado fez uma venda"
+
+msgid "New partner awaiting approval"
+msgstr "Novo parceiro aguardando aprovação"
+
+msgid "New Invoice received"
+msgstr "Nova NF recebida"
+
+# ===== Misc =====
+msgid "Are you sure?"
+msgstr "Tem certeza?"
+
+msgid "Unauthorized action"
+msgstr "Ação não autorizada"
+
+msgid "Permission denied"
+msgstr "Permissão negada"
+
+msgid "No items found."
+msgstr "Nenhum item encontrado."
+
+msgid "Page %d of %d"
+msgstr "Página %d de %d"
+
+msgid "Previous"
+msgstr "Anterior"
+
+msgid "Next"
+msgstr "Próxima"
+
+msgid "%d items"
+msgstr "%d itens"
+
+msgid "Note:"
+msgstr "Nota:"
+
+msgid "Logs are automatically cleaned after 90 days for LGPD compliance."
+msgstr "Os logs são automaticamente limpos após 90 dias para conformidade com LGPD."

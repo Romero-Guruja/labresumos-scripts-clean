@@ -1,0 +1,527 @@
+/**
+ * Lab Resumos Parceiros - Estilos Públicos
+ */
+
+/* Variáveis */
+:root {
+    --lrp-primary: #2A6B9F;
+    --lrp-secondary: #1a4d73;
+    --lrp-success: #28a745;
+    --lrp-warning: #ffc107;
+    --lrp-danger: #dc3545;
+    --lrp-light: #f8f9fa;
+    --lrp-dark: #343a40;
+    --lrp-border: #dee2e6;
+    --lrp-text: #212529;
+    --lrp-text-muted: #6c757d;
+    --lrp-radius: 8px;
+    --lrp-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Reset */
+.lrp-dashboard *,
+.lrp-registration * {
+    box-sizing: border-box;
+}
+
+/* Container */
+.lrp-dashboard,
+.lrp-registration {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--lrp-text);
+}
+
+/* Botões */
+.lrp-btn,
+.lrp-button {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--lrp-radius);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: var(--lrp-primary);
+    color: white;
+}
+
+.lrp-btn:hover,
+.lrp-button:hover {
+    background-color: var(--lrp-secondary);
+    color: white;
+}
+
+.lrp-btn-primary {
+    background-color: var(--lrp-primary);
+    color: white;
+}
+
+.lrp-btn-success {
+    background-color: var(--lrp-success);
+}
+
+.lrp-btn-large {
+    padding: 15px 30px;
+    font-size: 16px;
+}
+
+/* Inputs */
+.lrp-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid var(--lrp-border);
+    border-radius: var(--lrp-radius);
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.lrp-input:focus {
+    outline: none;
+    border-color: var(--lrp-primary);
+    box-shadow: 0 0 0 3px rgba(42, 107, 159, 0.1);
+}
+
+/* Notices */
+.lrp-notice {
+    padding: 15px 20px;
+    border-radius: var(--lrp-radius);
+    margin-bottom: 20px;
+}
+
+.lrp-notice-info {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+/* Aviso de requisito PJ */
+.lrp-pj-requirement {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.lrp-pj-requirement p {
+    margin: 0 0 5px 0;
+}
+
+.lrp-pj-requirement p:last-child {
+    margin-bottom: 0;
+}
+
+/* Seção de confirmações */
+.lrp-form-confirmations {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: var(--lrp-radius);
+}
+
+.lrp-form-confirmations .lrp-checkbox {
+    display: block;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.lrp-form-confirmations .lrp-checkbox:last-child {
+    margin-bottom: 0;
+}
+
+.lrp-notice-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.lrp-notice-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Status badges */
+.lrp-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.lrp-status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.lrp-status-approved,
+.lrp-status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.lrp-status-rejected,
+.lrp-status-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.lrp-status-paid {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+/* Badges de tipo de atribuição */
+.lrp-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.lrp-badge-link {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+.lrp-badge-coupon {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.lrp-badge-both {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    color: #5e35b1;
+    border: 1px solid #b39ddb;
+}
+
+.lrp-badge-guruja {
+    background-color: #fff8e1;
+    color: #f57f17;
+    font-size: 14px;
+}
+
+/* Tabelas */
+.lrp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.lrp-table th,
+.lrp-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--lrp-border);
+}
+
+.lrp-table th {
+    background-color: var(--lrp-light);
+    font-weight: 600;
+}
+
+.lrp-table tr:hover td {
+    background-color: #f5f5f5;
+}
+
+/* Empty state */
+.lrp-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--lrp-text-muted);
+}
+
+/* Login/registro */
+.lrp-login-required,
+.lrp-not-affiliate,
+.lrp-status-message {
+    text-align: center;
+    padding: 40px;
+    background-color: var(--lrp-light);
+    border-radius: var(--lrp-radius);
+}
+
+.lrp-status-message .lrp-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 15px;
+}
+
+/* Formulários */
+.lrp-form-group {
+    margin-bottom: 20px;
+}
+
+.lrp-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.lrp-form-group small {
+    display: block;
+    margin-top: 5px;
+    color: var(--lrp-text-muted);
+    font-size: 12px;
+}
+
+.lrp-form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.lrp-form-group-half {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    .lrp-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+.lrp-form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--lrp-border);
+}
+
+.lrp-form-section h4 {
+    margin-top: 0;
+    color: var(--lrp-primary);
+}
+
+.lrp-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.lrp-checkbox input {
+    margin-top: 3px;
+}
+
+/* Copy button */
+.lrp-copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.lrp-copy-btn:hover {
+    opacity: 1;
+}
+
+/* Toast Notifications */
+.lrp-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lrp-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: #333;
+    color: white;
+    border-radius: var(--lrp-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-size: 14px;
+    animation: lrp-toast-in 0.3s ease;
+}
+
+.lrp-toast.lrp-toast-out {
+    animation: lrp-toast-out 0.3s ease forwards;
+}
+
+.lrp-toast-success {
+    background: var(--lrp-success);
+}
+
+.lrp-toast-error {
+    background: var(--lrp-danger);
+}
+
+@keyframes lrp-toast-in {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes lrp-toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+}
+
+/* Seletor de Tipo de Faturamento (PJ/RPA) */
+.lrp-billing-type-selector {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.lrp-billing-type-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.lrp-billing-type-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.lrp-billing-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--lrp-light);
+    border: 2px solid var(--lrp-border);
+    border-radius: var(--lrp-radius);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.lrp-billing-type-option:hover .lrp-billing-type-card {
+    border-color: var(--lrp-primary);
+    background-color: #e8f4fd;
+}
+
+.lrp-billing-type-option.selected .lrp-billing-type-card,
+.lrp-billing-type-option input:checked + .lrp-billing-type-card {
+    border-color: var(--lrp-primary);
+    background-color: #e8f4fd;
+    box-shadow: 0 0 0 3px rgba(42, 107, 159, 0.2);
+}
+
+.lrp-billing-type-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.lrp-billing-type-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--lrp-text);
+    margin-bottom: 5px;
+}
+
+.lrp-billing-type-desc {
+    font-size: 12px;
+    color: var(--lrp-text-muted);
+}
+
+/* Campos condicionais */
+.lrp-billing-pj-fields,
+.lrp-billing-rpa-fields {
+    animation: lrp-fade-in 0.3s ease;
+}
+
+@keyframes lrp-fade-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Badge de adiamento */
+.lrp-badge-deferred {
+    font-size: 10px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* Seção de dados RPA */
+.lrp-rpa-data,
+.lrp-rpa-info {
+    background-color: #e3f2fd;
+    border-radius: var(--lrp-radius);
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.lrp-rpa-data p,
+.lrp-rpa-info p {
+    margin: 0 0 8px 0;
+}
+
+.lrp-rpa-data p:last-child,
+.lrp-rpa-info p:last-child {
+    margin-bottom: 0;
+}
+
+/* Seção de adiamento */
+.lrp-defer-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--lrp-border);
+}
+
+/* Botões em linha */
+.lrp-form-actions-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+/* Botão secundário */
+.lrp-btn-secondary {
+    background-color: var(--lrp-light);
+    color: var(--lrp-text);
+    border: 1px solid var(--lrp-border);
+}
+
+.lrp-btn-secondary:hover {
+    background-color: #e9ecef;
+    color: var(--lrp-text);
+}
+
+.lrp-btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .lrp-dashboard,
+    .lrp-registration {
+        padding: 15px;
+    }
+    
+    .lrp-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .lrp-toast-container {
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+    }
+    
+    .lrp-billing-type-selector {
+        flex-direction: column;
+    }
+    
+    .lrp-form-actions-row {
+        flex-direction: column;
+    }
+    
+    .lrp-form-actions-row .lrp-btn {
+        width: 100%;
+        text-align: center;
+    }
+}

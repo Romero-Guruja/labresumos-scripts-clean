@@ -1,0 +1,839 @@
+/**
+ * Lab Resumos - Recuperação de Vendas
+ * Admin Styles
+ */
+
+/* ==========================================================================
+   CSS Variables - Brand Colors
+   ========================================================================== */
+
+:root {
+    --lr-amarelo: #F1CC00;
+    --lr-amarelo-dark: #D4B400;
+    --lr-preto: #333B49;
+    --lr-azul: #2A6B9F;
+    --lr-azul-dark: #1E5A8A;
+    
+    /* Status Colors */
+    --lr-novo: #dc3545;
+    --lr-novo-bg: #f8d7da;
+    --lr-novo-text: #721c24;
+    
+    --lr-atendimento: #ffc107;
+    --lr-atendimento-bg: #fff3cd;
+    --lr-atendimento-text: #856404;
+    
+    --lr-aguardando: #17a2b8;
+    --lr-aguardando-bg: #d1ecf1;
+    --lr-aguardando-text: #0c5460;
+    
+    --lr-resolvido: #28a745;
+    --lr-resolvido-bg: #d4edda;
+    --lr-resolvido-text: #155724;
+    
+    --lr-abandonado: #6c757d;
+    --lr-abandonado-bg: #e2e3e5;
+    --lr-abandonado-text: #383d41;
+    
+    /* UI Colors */
+    --lr-border: #ddd;
+    --lr-bg-light: #f8f9fa;
+    --lr-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --lr-radius: 8px;
+}
+
+/* ==========================================================================
+   Dashboard Layout
+   ========================================================================== */
+
+.lr-recovery-dashboard {
+    max-width: 1400px;
+}
+
+.lr-recovery-dashboard h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--lr-preto);
+}
+
+/* ==========================================================================
+   Statistics Cards
+   ========================================================================== */
+
+.lr-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.lr-stat-card {
+    background: white;
+    border-radius: var(--lr-radius);
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--lr-shadow);
+    border-left: 4px solid var(--lr-border);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.lr-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lr-stat-card .lr-stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--lr-preto);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.lr-stat-card .lr-stat-label {
+    font-size: 13px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lr-stat-novo { border-left-color: var(--lr-novo); }
+.lr-stat-atendimento { border-left-color: var(--lr-atendimento); }
+.lr-stat-aguardando { border-left-color: var(--lr-aguardando); }
+.lr-stat-resolvido { border-left-color: var(--lr-resolvido); }
+.lr-stat-valor { border-left-color: var(--lr-amarelo); }
+
+.lr-stat-valor .lr-stat-number {
+    font-size: 24px;
+    color: var(--lr-azul);
+}
+
+/* ==========================================================================
+   Filters
+   ========================================================================== */
+
+.lr-filters-box {
+    background: white;
+    border-radius: var(--lr-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--lr-shadow);
+}
+
+.lr-filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.lr-filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.lr-filter-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.lr-filter-item select,
+.lr-filter-item input[type="date"] {
+    min-width: 150px;
+    padding: 8px 12px;
+    border: 1px solid var(--lr-border);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.lr-filter-actions {
+    flex-direction: row;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   Cases List / Table
+   ========================================================================== */
+
+.lr-cases-list {
+    background: white;
+    border-radius: var(--lr-radius);
+    box-shadow: var(--lr-shadow);
+    overflow: hidden;
+}
+
+.lr-cases-list table {
+    border: none;
+    margin: 0;
+}
+
+.lr-cases-list th {
+    background: var(--lr-bg-light);
+    font-weight: 600;
+    color: var(--lr-preto);
+    padding: 15px 12px;
+    border-bottom: 2px solid var(--lr-border);
+}
+
+.lr-cases-list td {
+    padding: 15px 12px;
+    vertical-align: middle;
+}
+
+.lr-case-row:hover {
+    background: #fafafa;
+}
+
+.lr-customer-info strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.lr-customer-phone {
+    font-size: 13px;
+    color: #666;
+}
+
+/* ==========================================================================
+   Status Badges
+   ========================================================================== */
+
+.lr-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.lr-badge-large {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.lr-badge-novo {
+    background: var(--lr-novo-bg);
+    color: var(--lr-novo-text);
+}
+
+.lr-badge-em_atendimento {
+    background: var(--lr-atendimento-bg);
+    color: var(--lr-atendimento-text);
+}
+
+.lr-badge-aguardando_cliente {
+    background: var(--lr-aguardando-bg);
+    color: var(--lr-aguardando-text);
+}
+
+.lr-badge-resolvido {
+    background: var(--lr-resolvido-bg);
+    color: var(--lr-resolvido-text);
+}
+
+.lr-badge-abandonado {
+    background: var(--lr-abandonado-bg);
+    color: var(--lr-abandonado-text);
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+
+.lr-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.lr-empty-icon {
+    font-size: 64px;
+    margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.lr-pagination {
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid var(--lr-border);
+}
+
+.lr-pagination .page-numbers {
+    display: inline-block;
+    padding: 8px 14px;
+    margin: 0 3px;
+    border: 1px solid var(--lr-border);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--lr-preto);
+    background: white;
+    transition: all 0.2s;
+}
+
+.lr-pagination .page-numbers:hover {
+    background: var(--lr-bg-light);
+    border-color: var(--lr-azul);
+}
+
+.lr-pagination .page-numbers.current {
+    background: var(--lr-azul);
+    border-color: var(--lr-azul);
+    color: white;
+}
+
+/* ==========================================================================
+   Case Detail Page
+   ========================================================================== */
+
+.lr-recovery-case-detail {
+    max-width: 1400px;
+}
+
+.lr-case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--lr-border);
+}
+
+.lr-case-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lr-back-link {
+    color: var(--lr-azul);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.lr-back-link:hover {
+    text-decoration: underline;
+}
+
+.lr-case-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--lr-preto);
+}
+
+/* ==========================================================================
+   Case Grid Layout
+   ========================================================================== */
+
+.lr-case-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 25px;
+}
+
+@media (max-width: 1200px) {
+    .lr-case-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   Cards
+   ========================================================================== */
+
+.lr-card {
+    background: white;
+    border-radius: var(--lr-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--lr-shadow);
+}
+
+.lr-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: var(--lr-preto);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--lr-border);
+}
+
+.lr-card-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .lr-card-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.lr-card-half {
+    margin-bottom: 0;
+}
+
+.lr-card-warning {
+    border-left: 4px solid var(--lr-atendimento);
+    background: #fffcf0;
+}
+
+.lr-card-actions {
+    position: sticky;
+    top: 32px;
+}
+
+/* ==========================================================================
+   Info Lists
+   ========================================================================== */
+
+.lr-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lr-info-item {
+    font-size: 14px;
+    color: #555;
+}
+
+.lr-info-item strong {
+    color: var(--lr-preto);
+}
+
+.lr-info-copyable {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lr-info-highlight {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--lr-preto);
+}
+
+.lr-btn-copy {
+    background: none;
+    border: 1px solid var(--lr-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.lr-btn-copy:hover {
+    background: var(--lr-bg-light);
+}
+
+.lr-btn-copy.copied {
+    background: var(--lr-resolvido-bg);
+    border-color: var(--lr-resolvido);
+}
+
+/* ==========================================================================
+   Failure Info
+   ========================================================================== */
+
+.lr-failure-info p {
+    margin: 0 0 10px 0;
+}
+
+.lr-tip {
+    background: var(--lr-atendimento-bg);
+    padding: 12px 15px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--lr-atendimento-text);
+    margin-top: 15px;
+}
+
+/* ==========================================================================
+   Checklist
+   ========================================================================== */
+
+.lr-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.lr-checklist-item {
+    padding: 15px;
+    background: var(--lr-bg-light);
+    border-radius: 6px;
+    border: 1px solid var(--lr-border);
+    transition: all 0.2s;
+}
+
+.lr-checklist-item.completed {
+    background: var(--lr-resolvido-bg);
+    border-color: var(--lr-resolvido);
+}
+
+.lr-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.lr-checkbox-label input[type="checkbox"] {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.lr-checkbox-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--lr-azul);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.lr-checklist-item.completed .lr-checkbox-number {
+    background: var(--lr-resolvido);
+}
+
+.lr-checkbox-text {
+    flex: 1;
+}
+
+.lr-checkbox-desc {
+    display: block;
+    color: #666;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.lr-checklist-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--lr-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.lr-course-id {
+    color: #888;
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   Autologin Section
+   ========================================================================== */
+
+.lr-autologin-section {
+    margin-top: 15px;
+}
+
+.lr-autologin-result {
+    margin-top: 15px;
+}
+
+.lr-autologin-url-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.lr-autologin-url {
+    flex: 1;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    border: 1px solid var(--lr-border);
+    border-radius: 4px;
+    background: var(--lr-bg-light);
+}
+
+.lr-autologin-exists {
+    margin-bottom: 10px;
+}
+
+.lr-autologin-status {
+    display: inline-block;
+    padding: 5px 10px;
+    background: var(--lr-resolvido-bg);
+    color: var(--lr-resolvido-text);
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.lr-btn-whatsapp-main {
+    background: #25D366 !important;
+    border-color: #25D366 !important;
+    color: white !important;
+}
+
+.lr-btn-whatsapp-main:hover {
+    background: #1DA851 !important;
+    border-color: #1DA851 !important;
+}
+
+/* ==========================================================================
+   Notes Section
+   ========================================================================== */
+
+.lr-notes-form {
+    margin-bottom: 20px;
+}
+
+.lr-notes-form textarea {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.lr-notes-history h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.lr-logs-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.lr-log-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--lr-border);
+    font-size: 13px;
+}
+
+.lr-log-item:last-child {
+    border-bottom: none;
+}
+
+.lr-log-date {
+    color: #888;
+    margin-right: 8px;
+}
+
+.lr-log-user {
+    font-weight: 600;
+    color: var(--lr-preto);
+}
+
+.lr-log-details {
+    color: #555;
+}
+
+.lr-log-note .lr-log-details {
+    display: block;
+    margin-top: 5px;
+    padding: 8px 12px;
+    background: var(--lr-bg-light);
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Sidebar Actions
+   ========================================================================== */
+
+.lr-action-group {
+    margin-bottom: 15px;
+}
+
+.lr-action-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.lr-action-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--lr-border);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.lr-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--lr-border);
+}
+
+.lr-action-buttons .button {
+    justify-content: center;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Quick Links
+   ========================================================================== */
+
+.lr-quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lr-quick-links .button {
+    text-align: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Info Meta
+   ========================================================================== */
+
+.lr-info-meta {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lr-info-meta li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--lr-border);
+    font-size: 13px;
+}
+
+.lr-info-meta li:last-child {
+    border-bottom: none;
+}
+
+.lr-info-meta strong {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+/* ==========================================================================
+   Text Utilities
+   ========================================================================== */
+
+.lr-text-muted {
+    color: #888;
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
+
+.lr-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.lr-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--lr-azul);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: lr-spin 0.8s linear infinite;
+}
+
+@keyframes lr-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Toast Notifications
+   ========================================================================== */
+
+.lr-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 15px 25px;
+    background: var(--lr-preto);
+    color: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 99999;
+    animation: lr-toast-in 0.3s ease;
+}
+
+.lr-toast.success {
+    background: var(--lr-resolvido);
+}
+
+.lr-toast.error {
+    background: var(--lr-novo);
+}
+
+@keyframes lr-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 782px) {
+    .lr-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .lr-filters-row {
+        flex-direction: column;
+    }
+    
+    .lr-filter-item {
+        width: 100%;
+    }
+    
+    .lr-filter-item select,
+    .lr-filter-item input[type="date"] {
+        width: 100%;
+    }
+    
+    .lr-cases-list {
+        overflow-x: auto;
+    }
+    
+    .lr-case-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+}

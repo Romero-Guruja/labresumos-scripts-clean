@@ -1,0 +1,601 @@
+# Lab Resumos - Recuperação de Vendas
+# Copyright (C) 2026 Lab Resumos
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Lab Resumos - Recuperação de Vendas 1.0.0\n"
+"Report-Msgid-Bugs-To: https://labresumos.com.br\n"
+"POT-Creation-Date: 2026-01-16 00:00:00+00:00\n"
+"PO-Revision-Date: 2026-01-16 00:00:00+00:00\n"
+"Last-Translator: Lab Resumos <contato@labresumos.com.br>\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Cursor AI\n"
+
+#: lr-recuperacao-vendas.php
+msgid "Lab Resumos - Recuperação de Vendas requer os seguintes plugins: %s"
+msgstr "Lab Resumos - Recuperação de Vendas requer os seguintes plugins: %s"
+
+#: lr-recuperacao-vendas.php
+msgid "Lab Resumos - Recuperação de Vendas requer o WooCommerce instalado e ativo."
+msgstr "Lab Resumos - Recuperação de Vendas requer o WooCommerce instalado e ativo."
+
+#: lr-recuperacao-vendas.php
+msgid "Erro de Ativação"
+msgstr "Erro de Ativação"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Caso criado automaticamente"
+msgstr "Caso criado automaticamente"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Contatar cliente via WhatsApp"
+msgstr "Contatar cliente via WhatsApp"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Confirmar se é compra legítima e se podemos reprocessar"
+msgstr "Confirmar se é compra legítima e se podemos reprocessar"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Reprocessar pagamento na Pagar.me"
+msgstr "Reprocessar pagamento na Pagar.me"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Reprocessar sem antifraude"
+msgstr "Reprocessar sem antifraude"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Matricular aluno no curso"
+msgstr "Matricular aluno no curso"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Via Edwiser Bridge"
+msgstr "Via Edwiser Bridge"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Alterar pedido para Concluído"
+msgstr "Alterar pedido para Concluído"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Verificar/Emitir NF-e"
+msgstr "Verificar/Emitir NF-e"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Transação recusada por excesso de retentativas"
+msgstr "Transação recusada por excesso de retentativas"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Transação recusada pelo banco"
+msgstr "Transação recusada pelo banco"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Transação bloqueada por antifraude"
+msgstr "Transação bloqueada por antifraude"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Provável bloqueio por antifraude (aprovado pelo banco, mas falhou)"
+msgstr "Provável bloqueio por antifraude (aprovado pelo banco, mas falhou)"
+
+#: includes/class-lr-recovery-manager.php includes/class-lr-admin-dashboard.php
+msgid "Novo"
+msgstr "Novo"
+
+#: includes/class-lr-recovery-manager.php includes/class-lr-admin-dashboard.php
+msgid "Em atendimento"
+msgstr "Em atendimento"
+
+#: includes/class-lr-recovery-manager.php includes/class-lr-admin-dashboard.php
+msgid "Aguardando cliente"
+msgstr "Aguardando cliente"
+
+#: includes/class-lr-recovery-manager.php includes/class-lr-admin-dashboard.php
+msgid "Resolvido"
+msgstr "Resolvido"
+
+#: includes/class-lr-recovery-manager.php includes/class-lr-admin-dashboard.php
+msgid "Abandonado"
+msgstr "Abandonado"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Status alterado para: %s"
+msgstr "Status alterado para: %s"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Caso assumido por %s"
+msgstr "Caso assumido por %s"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Item marcado como concluído: %s"
+msgstr "Item marcado como concluído: %s"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Item desmarcado: %s"
+msgstr "Item desmarcado: %s"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Caso resolvido"
+msgstr "Caso resolvido"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Cliente completou nova compra (Pedido #%d) com os mesmos produtos"
+msgstr "Cliente completou nova compra (Pedido #%d) com os mesmos produtos"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Pedido marcado como concluído via Recuperação de Vendas"
+msgstr "Pedido marcado como concluído via Recuperação de Vendas"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Permissão negada"
+msgstr "Permissão negada"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Dados inválidos"
+msgstr "Dados inválidos"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Checklist atualizado"
+msgstr "Checklist atualizado"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Erro ao atualizar checklist"
+msgstr "Erro ao atualizar checklist"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Caso assumido com sucesso"
+msgstr "Caso assumido com sucesso"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Erro ao assumir caso"
+msgstr "Erro ao assumir caso"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Observação adicionada"
+msgstr "Observação adicionada"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Erro ao adicionar observação"
+msgstr "Erro ao adicionar observação"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Status atualizado"
+msgstr "Status atualizado"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Erro ao atualizar status"
+msgstr "Erro ao atualizar status"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Pedido marcado como concluído"
+msgstr "Pedido marcado como concluído"
+
+#: includes/class-lr-recovery-manager.php
+msgid "Erro ao marcar pedido como concluído ou pedido já está concluído"
+msgstr "Erro ao marcar pedido como concluído ou pedido já está concluído"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Recuperação de Vendas"
+msgstr "Recuperação de Vendas"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Recuperação"
+msgstr "Recuperação"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Caso não encontrado."
+msgstr "Caso não encontrado."
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Pedido não encontrado."
+msgstr "Pedido não encontrado."
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Antifraude"
+msgstr "Antifraude"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Banco recusou"
+msgstr "Banco recusou"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Excesso de retentativas"
+msgstr "Excesso de retentativas"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "Outro"
+msgstr "Outro"
+
+#: includes/class-lr-notifications.php
+msgid "[Lab Resumos] 🔴 Pedido #%d falhou - Recuperação necessária"
+msgstr "[Lab Resumos] 🔴 Pedido #%d falhou - Recuperação necessária"
+
+#: includes/class-lr-notifications.php
+msgid "%d caso de recuperação pendente"
+msgid_plural "%d casos de recuperação pendentes"
+msgstr[0] "%d caso de recuperação pendente"
+msgstr[1] "%d casos de recuperação pendentes"
+
+#: includes/class-lr-order-metabox.php
+msgid "🔄 Recuperação de Venda"
+msgstr "🔄 Recuperação de Venda"
+
+#: includes/class-lr-order-metabox.php
+msgid "Este pedido não está com status \"Malsucedido\"."
+msgstr "Este pedido não está com status \"Malsucedido\"."
+
+#: includes/class-lr-order-metabox.php
+msgid "Ver Histórico de Recuperação"
+msgstr "Ver Histórico de Recuperação"
+
+#: includes/class-lr-order-metabox.php
+msgid "Status do Caso:"
+msgstr "Status do Caso:"
+
+#: includes/class-lr-order-metabox.php
+msgid "⚠️ Caso de recuperação não encontrado."
+msgstr "⚠️ Caso de recuperação não encontrado."
+
+#: includes/class-lr-order-metabox.php
+msgid "Tipo de Falha:"
+msgstr "Tipo de Falha:"
+
+#: includes/class-lr-order-metabox.php
+msgid "💡 Provável bloqueio por antifraude. Reprocessar sem antifraude na Pagar.me."
+msgstr "💡 Provável bloqueio por antifraude. Reprocessar sem antifraude na Pagar.me."
+
+#: includes/class-lr-order-metabox.php
+msgid "Contato Rápido:"
+msgstr "Contato Rápido:"
+
+#: includes/class-lr-order-metabox.php
+msgid "Abrir WhatsApp"
+msgstr "Abrir WhatsApp"
+
+#: includes/class-lr-order-metabox.php
+msgid "Ver na Pagar.me"
+msgstr "Ver na Pagar.me"
+
+#: includes/class-lr-order-metabox.php
+msgid "Painel Completo"
+msgstr "Painel Completo"
+
+#: includes/class-lr-autologin-integration.php
+msgid "Sistema de autologin não disponível. Verifique se o snippet WPCode está ativo."
+msgstr "Sistema de autologin não disponível. Verifique se o snippet WPCode está ativo."
+
+#: includes/class-lr-autologin-integration.php
+msgid "ID do pedido inválido"
+msgstr "ID do pedido inválido"
+
+#: includes/class-lr-autologin-integration.php
+msgid "Link de autologin gerado"
+msgstr "Link de autologin gerado"
+
+#: templates/dashboard.php
+msgid "Novos"
+msgstr "Novos"
+
+#: templates/dashboard.php
+msgid "Em Atendimento"
+msgstr "Em Atendimento"
+
+#: templates/dashboard.php
+msgid "Aguardando"
+msgstr "Aguardando"
+
+#: templates/dashboard.php
+msgid "Resolvidos"
+msgstr "Resolvidos"
+
+#: templates/dashboard.php
+msgid "Valor Recuperado"
+msgstr "Valor Recuperado"
+
+#: templates/dashboard.php
+msgid "Status:"
+msgstr "Status:"
+
+#: templates/dashboard.php
+msgid "Todos"
+msgstr "Todos"
+
+#: templates/dashboard.php
+msgid "Responsável:"
+msgstr "Responsável:"
+
+#: templates/dashboard.php
+msgid "Tipo de Falha:"
+msgstr "Tipo de Falha:"
+
+#: templates/dashboard.php
+msgid "Retentativas"
+msgstr "Retentativas"
+
+#: templates/dashboard.php
+msgid "De:"
+msgstr "De:"
+
+#: templates/dashboard.php
+msgid "Até:"
+msgstr "Até:"
+
+#: templates/dashboard.php
+msgid "Filtrar"
+msgstr "Filtrar"
+
+#: templates/dashboard.php
+msgid "Limpar"
+msgstr "Limpar"
+
+#: templates/dashboard.php
+msgid "Nenhum caso encontrado."
+msgstr "Nenhum caso encontrado."
+
+#: templates/dashboard.php
+msgid "Status"
+msgstr "Status"
+
+#: templates/dashboard.php
+msgid "Pedido"
+msgstr "Pedido"
+
+#: templates/dashboard.php
+msgid "Cliente"
+msgstr "Cliente"
+
+#: templates/dashboard.php
+msgid "Valor"
+msgstr "Valor"
+
+#: templates/dashboard.php
+msgid "Tipo"
+msgstr "Tipo"
+
+#: templates/dashboard.php
+msgid "Data"
+msgstr "Data"
+
+#: templates/dashboard.php
+msgid "Ações"
+msgstr "Ações"
+
+#: templates/dashboard.php
+msgid "Assumir"
+msgstr "Assumir"
+
+#: templates/dashboard.php
+msgid "Ver Detalhes"
+msgstr "Ver Detalhes"
+
+#: templates/case-detail.php
+msgid "Voltar"
+msgstr "Voltar"
+
+#: templates/case-detail.php
+msgid "Caso #%1$d - %2$s"
+msgstr "Caso #%1$d - %2$s"
+
+#: templates/case-detail.php
+msgid "Informações do Cliente"
+msgstr "Informações do Cliente"
+
+#: templates/case-detail.php
+msgid "Copiar"
+msgstr "Copiar"
+
+#: templates/case-detail.php
+msgid "Detalhes do Pedido"
+msgstr "Detalhes do Pedido"
+
+#: templates/case-detail.php
+msgid "Motivo da Falha"
+msgstr "Motivo da Falha"
+
+#: templates/case-detail.php
+msgid "Tipo:"
+msgstr "Tipo:"
+
+#: templates/case-detail.php
+msgid "Mensagem:"
+msgstr "Mensagem:"
+
+#: templates/case-detail.php
+msgid "A mensagem \"aprovada com sucesso\" seguida de falha indica bloqueio por antifraude. Reprocessar sem antifraude na Pagar.me."
+msgstr "A mensagem \"aprovada com sucesso\" seguida de falha indica bloqueio por antifraude. Reprocessar sem antifraude na Pagar.me."
+
+#: templates/case-detail.php
+msgid "Ver Cobrança na Pagar.me"
+msgstr "Ver Cobrança na Pagar.me"
+
+#: templates/case-detail.php
+msgid "Checklist de Recuperação"
+msgstr "Checklist de Recuperação"
+
+#: templates/case-detail.php
+msgid "Abrir Pagar.me"
+msgstr "Abrir Pagar.me"
+
+#: templates/case-detail.php
+msgid "Matrícula Manual"
+msgstr "Matrícula Manual"
+
+#: templates/case-detail.php
+msgid "Curso ID: %d"
+msgstr "Curso ID: %d"
+
+#: templates/case-detail.php
+msgid "✓ Já Concluído"
+msgstr "✓ Já Concluído"
+
+#: templates/case-detail.php
+msgid "Marcar como Concluído"
+msgstr "Marcar como Concluído"
+
+#: templates/case-detail.php
+msgid "Abrir Pedido"
+msgstr "Abrir Pedido"
+
+#: templates/case-detail.php
+msgid "Link de Recuperação (Autologin)"
+msgstr "Link de Recuperação (Autologin)"
+
+#: templates/case-detail.php
+msgid "Caso o cliente prefira tentar pagar novamente:"
+msgstr "Caso o cliente prefira tentar pagar novamente:"
+
+#: templates/case-detail.php
+msgid "Gerar Link de Autologin"
+msgstr "Gerar Link de Autologin"
+
+#: templates/case-detail.php
+msgid "Enviar via WhatsApp"
+msgstr "Enviar via WhatsApp"
+
+#: templates/case-detail.php
+msgid "Observações do Atendimento"
+msgstr "Observações do Atendimento"
+
+#: templates/case-detail.php
+msgid "Adicione uma observação..."
+msgstr "Adicione uma observação..."
+
+#: templates/case-detail.php
+msgid "Adicionar Observação"
+msgstr "Adicionar Observação"
+
+#: templates/case-detail.php
+msgid "Histórico:"
+msgstr "Histórico:"
+
+#: templates/case-detail.php
+msgid "Nenhum registro ainda."
+msgstr "Nenhum registro ainda."
+
+#: templates/case-detail.php
+msgid "Sistema"
+msgstr "Sistema"
+
+#: templates/case-detail.php
+msgid "Ações do Caso"
+msgstr "Ações do Caso"
+
+#: templates/case-detail.php
+msgid "Não atribuído"
+msgstr "Não atribuído"
+
+#: templates/case-detail.php
+msgid "Marcar como Resolvido"
+msgstr "Marcar como Resolvido"
+
+#: templates/case-detail.php
+msgid "Marcar como Abandonado"
+msgstr "Marcar como Abandonado"
+
+#: templates/case-detail.php
+msgid "Links Rápidos"
+msgstr "Links Rápidos"
+
+#: templates/case-detail.php
+msgid "Ver Pedido WC"
+msgstr "Ver Pedido WC"
+
+#: templates/case-detail.php
+msgid "Pagar.me Dashboard"
+msgstr "Pagar.me Dashboard"
+
+#: templates/case-detail.php
+msgid "Edwiser Bridge"
+msgstr "Edwiser Bridge"
+
+#: templates/case-detail.php
+msgid "Informações"
+msgstr "Informações"
+
+#: templates/case-detail.php
+msgid "Criado em:"
+msgstr "Criado em:"
+
+#: templates/case-detail.php
+msgid "Atualizado em:"
+msgstr "Atualizado em:"
+
+#: templates/case-detail.php
+msgid "Resolvido em:"
+msgstr "Resolvido em:"
+
+#: templates/dashboard.php
+msgid "Importar %d pedidos"
+msgstr "Importar %d pedidos"
+
+#: templates/import-orders.php
+msgid "Importar Pedidos Existentes"
+msgstr "Importar Pedidos Existentes"
+
+#: templates/import-orders.php
+msgid "Voltar ao Dashboard"
+msgstr "Voltar ao Dashboard"
+
+#: templates/import-orders.php
+msgid "Sobre a Importação"
+msgstr "Sobre a Importação"
+
+#: templates/import-orders.php
+msgid "Esta página lista os pedidos com status \"Malsucedido\" que ainda não foram importados para o sistema de recuperação."
+msgstr "Esta página lista os pedidos com status \"Malsucedido\" que ainda não foram importados para o sistema de recuperação."
+
+#: templates/import-orders.php
+msgid "Selecione os pedidos que deseja importar e clique em \"Importar Selecionados\"."
+msgstr "Selecione os pedidos que deseja importar e clique em \"Importar Selecionados\"."
+
+#: templates/import-orders.php
+msgid "Nenhum pedido pendente de importação!"
+msgstr "Nenhum pedido pendente de importação!"
+
+#: templates/import-orders.php
+msgid "Todos os pedidos com status \"Malsucedido\" já foram importados para o sistema de recuperação."
+msgstr "Todos os pedidos com status \"Malsucedido\" já foram importados para o sistema de recuperação."
+
+#: templates/import-orders.php
+msgid "Selecionar Todos"
+msgstr "Selecionar Todos"
+
+#: templates/import-orders.php
+msgid "Desmarcar Todos"
+msgstr "Desmarcar Todos"
+
+#: templates/import-orders.php
+msgid "%d pedidos encontrados"
+msgstr "%d pedidos encontrados"
+
+#: templates/import-orders.php
+msgid "Importar Selecionados"
+msgstr "Importar Selecionados"
+
+#: templates/import-orders.php
+msgid "Produtos"
+msgstr "Produtos"
+
+#: templates/import-orders.php
+msgid "Tipo Provável"
+msgstr "Tipo Provável"
+
+#: templates/import-orders.php
+msgid "Ver pedido"
+msgstr "Ver pedido"
+
+#: templates/import-orders.php
+msgid "Não identificado"
+msgstr "Não identificado"
+
+#: templates/import-orders.php
+msgid "Provável antifraude"
+msgstr "Provável antifraude"
+
+#: includes/class-lr-admin-dashboard.php
+msgid "%d pedido importado com sucesso."
+msgid_plural "%d pedidos importados com sucesso."
+msgstr[0] "%d pedido importado com sucesso."
+msgstr[1] "%d pedidos importados com sucesso."
