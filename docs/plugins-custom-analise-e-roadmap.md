@@ -196,7 +196,7 @@ Ordem por **valor × segurança**. Cada fase é independente e reversível. F0 �
   confirmar site 200 e nada regrediu.
 - **Prod:** aditivo, seguro. Rollback = remover o mu-plugin.
 
-### F2 — Tirar o autologin do snippet  · risco: MÉDIO (magic link + Moodle) — MUITO cuidado
+### F2 — Tirar o autologin do snippet  · risco: MÉDIO (magic link + Moodle) — MUITO cuidado — ✅ FEITO 2026-07-21
 - Mover o código do snippet **#1241** para um plugin versionado (`lab-resumos-autologin`)
   ou para o core, **mantendo `lr_get_autologin_url` e `lr_get_payment_link_for_order` com
   assinatura idêntica**, dentro de `if (!function_exists(...))` (evita fatal de redeclare).
