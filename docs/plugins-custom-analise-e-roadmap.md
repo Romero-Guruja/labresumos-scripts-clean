@@ -463,11 +463,55 @@ Na mesma auditoria apareceram bugs pré-existentes no gerenciador de e-mails do
 é outro domínio do mesmo plugin).
 
 ### Pendências abertas
-- Push pro remoto `Romero-Guruja/labresumos-scripts-clean` — aguardando autorização.
-- SSO no Moodle do F2 nunca teve clique-through real confirmado (ver acima).
+
+**Do roadmap (decisão sua bloqueia continuar):**
+- **F3 — falta**: NF-e (`#1087`, decidir se entra em `acessos` ou plugin pequeno próprio) e
+  a decisão sobre `#1294` (SVG upload — sanitizar por XSS ou remover).
+- **F4 (performance)** — ainda não iniciado. 5 hotspots já mapeados na seção 4.
+- **F5 (consolidar `guruja-discount` ⇄ `parceiros`)** — risco MÉDIO-ALTO, deixado pro final
+  de propósito, ainda não iniciado.
+
+**Verificações que ficaram incompletas (não bloqueiam, mas vale saber):**
+- SSO no Moodle do F2 nunca teve clique-through real confirmado (Edwiser usa mecanismo
+  próprio de SSO, não achei o endpoint de gatilho a tempo — ver seção F2).
+- `#953` (modalidade de frete na NF-e, migrado no F3a) só fica 100% confirmado no próximo
+  pedido real que gerar nota fiscal — vale conferir o log do Webmania quando acontecer.
+
+**Achados de terceiros, não corrigidos por nós (decisão sua se quer agir):**
 - `edwiser-bridge-pro` teve uma rajada de 7 fatais não relacionados ao nosso código
   ("Call to a member function run() on null", falha transitória na checagem de licença,
-  autolimitada) — tem update disponível (4.2.2→4.2.3) que pode corrigir; não aplicado ainda.
+  autolimitada) — tem update disponível (4.2.2→4.2.3) que pode corrigir; não aplicado ainda
+  (é o ponto crítico de integração com o Moodle, prudente testar antes de aplicar).
+- Elementor Pro tem um bug antigo nos logs (01/07, não relacionado) e update disponível, mas
+  é salto de versão grande (3.34.0→4.2.0) — checar changelog antes de atualizar.
+- 1 fatal isolado do próprio WooCommerce (`WC_Admin_Reports`, achado no F3d) — não
+  recorrente, provável resquício das atualizações de plugin feitas por conta própria.
+
+**Decisão de negócio, não é bug técnico:**
+- `lab-resumos-parceiros/includes/emails/templates/monthly-closing.php` — template órfão,
+  nenhum código chama. Decidir se implementa o envio ou apaga o arquivo morto (ver
+  `docs/lab-resumos-parceiros-emails-corrigidos.md`).
+
+**Segurança — resolvido nesta sessão, 1 item secundário a confirmar:**
+- Histórico do git tinha 2 segredos reais (chaves OpenAI/Anthropic de ~9 meses atrás +
+  token Cloudflare do nosso próprio F0) — **removidos via reescrita de histórico antes do
+  1º push**, nunca chegaram a ser publicados. Detalhes completos em
+  `docs/incidente-segredos-historico-git-2026-07-21.md`. **Pendência residual**: confirmar
+  no painel da OpenAI/Anthropic que as chaves antigas já estão revogadas (o histórico do
+  commit sugere que sim, desde out/2025, mas vale confirmar).
+
+**Fora deste roadmap, de uma sessão de hardening anterior (21/07, mesma data, trabalho
+diferente) — conferir se ainda procede:**
+- Apagar os backups `.wpress` offline antigos (17GB) do guruja.com.br.
+- Revisar mais alguns admins externos (`leonardoferreira`, `marcosconde`, `playonecine` no
+  guruja; `marcosconde`, `consultoria@daniloborguetti`, `romero_wordpress_editor` no
+  labresumos).
+- Upgrade de PHP 8.1→8.3 no servidor (WooCommerce/Pagar.me já foram resolvidos pelas
+  atualizações que você fez por conta própria durante esta sessão).
+
+**Já feito, sem pendência:**
+- ~~Push pro remoto~~ — feito nesta sessão (branch `main` criada em
+  `Romero-Guruja/labresumos-scripts-clean`, tracking configurado).
 
 ---
 
