@@ -120,7 +120,7 @@ Armazenados no `wp_options` (`wpcode_snippets`), **fora do git**. Agrupados por 
 **URL:** `https://labresumos.com.br/venture` · **Arquivos:** `~/domains/labresumos.com.br/public_html/venture/`
 · **WP-CLI:** `wp --path=.../venture` · Prefixo de tabelas `wpstg0_` (mesmo banco do prod).
 
-### ⚠️ O staging NÃO é isolado — 4 armadilhas
+### ⚠️ O staging NÃO é isolado — 6 armadilhas
 
 1. **Mesmo banco de dados** (prefixo diferente). Operações normais dos plugins usam
    `$wpdb->prefix` = `wpstg0_` → ficam no staging. **Mas** qualquer query com prefixo
@@ -133,6 +133,15 @@ Armazenados no `wp_options` (`wpcode_snippets`), **fora do git**. Agrupados por 
    teste**, ou apontar `eb_url` do staging pra uma URL dummy / desabilitar o sync.
 4. **Pagar.me é o de produção** → checkout real gera cobrança real. Usar pedido de valor
    zero (fluxo cortesia) ou gateway em modo teste antes de testar pagamento.
+5. **Permalinks PLANOS** (`?page_id=`, sem rewrite pra pretty URLs) — rotas customizadas tipo
+   `/autologin/`, `/loja/`, `/conta/lost-password/` só funcionam com `index.php/<rota>/?...`
+   (bypassa o rewrite ausente) ou nem isso; a validação real dessas rotas específicas às
+   vezes só é possível em prod. Achado no F2/F3a/F3b.
+6. **WP Staging bloqueia acesso ANÔNIMO** no clone (mensagem "You need to login to access
+   that page", de `wp-content/plugins/wp-staging/views/frontend/header.php`) — qualquer teste
+   que dependa de simular um visitante deslogado (ex.: link de bypass admin, checkout de
+   convidado) não dá pra validar via HTTP anônimo no staging; testar a lógica isolada via
+   `wp eval` chamando a função direto, e deixar o teste HTTP real pra prod. Achado no F3b.
 
 ### Protocolo de teste seguro no staging (antes de cada fase)
 ```bash
@@ -220,9 +229,9 @@ Agrupar por domínio (um plugin por grupo), migrar **um grupo por vez** (staging
 desativa os snippets do grupo):
 - `lab-resumos-storefront`: #2774, #2382, #2831, #3039, #1422, #953. — ✅ FEITO 2026-07-21 (F3a).
   Nenhum define função nomeada (só closures) → zero risco de redeclare.
-- `lab-resumos-account`: #1023, #1214, #1283, #1014, #995 (login/conta/thank-you). **Define
-  função nomeada sem guard** — cutover deve desativar os snippets ANTES de ativar o plugin
-  (ver §6.4/§9).
+- `lab-resumos-account`: #1023, #1214, #1283, #1014, #995 (login/conta/thank-you). — ✅ FEITO
+  2026-07-21 (F3b). Cutover na ordem corrigida (desativa os 5 snippets → ativa o plugin) —
+  zero incidente, confirma que a correção de método do §9 funciona.
 - `lab-resumos-checkout`: #1123, #937, #1319 — **usar `LR_CPF` do core** (elimina o CPF
   fraco). #1123/#937 **definem função nomeada sem guard** — mesma regra de ordem.
 - `lab-resumos-admin-tools` (ou core): #2755, #1742, #1650 (→ `LR_Telegram`, ver nota sobre
@@ -326,6 +335,23 @@ staging `venture` usa **permalinks planos** (`?page_id=`), sem rewrite pra `/mat
 e o post `#3039` no CPT `wpcode` **não existe no staging** (só a entrada no option, que é a
 fonte de runtime real) — clone do staging ficou defasado nesse post específico, sem afetar o
 teste.
+
+### F3b — account → plugin `lab-resumos-account`
+5 snippets (`#1023` reset de senha, `#1214` fix lostpassword_url, `#1283` banner "Meus
+Materiais", `#1014` msg thank-you, `#995` admin: ver thank-you page), **12 funções nomeadas
+sem guard**. **Primeiro grupo a usar a ordem corrigida** (desativar os 5 snippets → só depois
+ativar o plugin) — cutover em prod sem nenhum incidente, confirmando que a correção de
+método funciona na prática. Verificado de ponta a ponta em prod: `/conta/lost-password/`
+(não `/minha-conta/`), redirect de `wp-login.php?action=lostpassword`, banner na
+`/minha-conta/`, e o teste mais importante — **acessar a thank-you page de um pedido real
+como visitante anônimo (zero cookies) via o link de bypass com nonce do admin**, confirmando
+que a impersonação temporária (`wp_set_current_user`, sem cookie de auth) funciona e a
+mensagem de acesso aparece. Gotcha de ambiente (não é bug nosso): o **próprio WP Staging**
+bloqueia acesso anônimo no clone `venture` ("You need to login to access that page", vem de
+`wp-content/plugins/wp-staging/views/frontend/header.php`) — por isso esse teste específico
+(link anônimo) só foi possível validar de verdade em prod; no staging validei a lógica
+chamando a função diretamente via `wp eval` (confirma que seta o usuário certo) e testando
+os outros 4 comportamentos normalmente. Zero erro novo em `fatal-errors-*.log`.
 
 ### Fix — `LR_Telegram::alert()` desacoplado do `cpf-sender-api`
 Achado na mesma auditoria pós-F3a: a option de habilitar/desabilitar (`cpf_sender_telegram_enabled`)
