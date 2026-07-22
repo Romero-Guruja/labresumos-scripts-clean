@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CPF Sender API
  * Description: Envia CPF de clientes e afiliados para endpoint externo (Edwiser Bridge + Lab Resumos Parceiros)
- * Version: 2.2.0
+ * Version: 2.3.0
  * Author: Lab Resumos
  * Text Domain: cpf-sender-api
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) exit;
 // SEÇÃO 1: CONSTANTES E ATIVAÇÃO
 // =============================================================================
 
-define('CPF_SENDER_VERSION', '2.2.0');
+define('CPF_SENDER_VERSION', '2.3.0');
 define('CPF_SENDER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CPF_SENDER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -128,14 +128,34 @@ function cpf_sender_activate() {
     add_option('cpf_sender_verify_api_url', 'https://api-laboratorio-resumos.azurewebsites.net/api/v1/hookdeck/lab-user/document/status');
     add_option('cpf_sender_verify_api_key', '');
 
-    // Agendar limpeza de logs antigos
-    if (!wp_next_scheduled('cpf_sender_cleanup_logs')) {
-        wp_schedule_event(time(), 'daily', 'cpf_sender_cleanup_logs');
-    }
-    
+    // Agendar limpeza de logs antigos (Action Scheduler — sobrevive a reset do wp_options 'cron'
+    // e migrações de servidor, diferente do WP-Cron puro)
+    cpf_sender_ensure_cleanup_scheduled();
+
     // Agendar verificação de pendências (a cada minuto)
-    if (!wp_next_scheduled('cpf_sender_check_pending')) {
-        wp_schedule_event(time(), 'every_minute', 'cpf_sender_check_pending');
+    cpf_sender_ensure_check_pending_scheduled();
+}
+
+/**
+ * Garante que a limpeza diária de logs está agendada (Action Scheduler).
+ * Chamada na ativação e também nos pontos de entrada de compra, para
+ * auto-recuperação caso a fila do Action Scheduler seja zerada por qualquer motivo
+ * (migração de servidor, restore de banco, etc.) sem o plugin ser reativado.
+ */
+function cpf_sender_ensure_cleanup_scheduled() {
+    if (!as_next_scheduled_action('cpf_sender_cleanup_logs')) {
+        as_schedule_recurring_action(time(), DAY_IN_SECONDS, 'cpf_sender_cleanup_logs', array(), 'cpf-sender');
+    }
+}
+
+/**
+ * Garante que a rede de segurança de reenvio (retry com backoff) está agendada.
+ * Mesma lógica de auto-recuperação da função acima — é a mais crítica das duas,
+ * pois é ela que resgata envios presos em 'pending'.
+ */
+function cpf_sender_ensure_check_pending_scheduled() {
+    if (!as_next_scheduled_action('cpf_sender_check_pending')) {
+        as_schedule_recurring_action(time(), 60, 'cpf_sender_check_pending', array(), 'cpf-sender');
     }
 }
 
@@ -145,25 +165,12 @@ function cpf_sender_activate() {
 register_deactivation_hook(__FILE__, 'cpf_sender_deactivate');
 
 function cpf_sender_deactivate() {
-    // Remover eventos agendados
-    wp_clear_scheduled_hook('cpf_sender_scheduled_send');
-    wp_clear_scheduled_hook('cpf_sender_cleanup_logs');
-    wp_clear_scheduled_hook('cpf_sender_check_pending');
-    wp_clear_scheduled_hook('cpf_sender_telegram_check');
-    wp_clear_scheduled_hook('cpf_sender_verify_write');
-}
-
-/**
- * Registrar intervalo customizado de 1 minuto
- */
-add_filter('cron_schedules', 'cpf_sender_add_cron_interval');
-
-function cpf_sender_add_cron_interval($schedules) {
-    $schedules['every_minute'] = array(
-        'interval' => 60,
-        'display'  => 'A cada minuto'
-    );
-    return $schedules;
+    // Remover ações agendadas (Action Scheduler)
+    as_unschedule_all_actions('cpf_sender_scheduled_send', array(), 'cpf-sender');
+    as_unschedule_all_actions('cpf_sender_cleanup_logs', array(), 'cpf-sender');
+    as_unschedule_all_actions('cpf_sender_check_pending', array(), 'cpf-sender');
+    as_unschedule_all_actions('cpf_sender_telegram_check', array(), 'cpf-sender');
+    as_unschedule_all_actions('cpf_sender_verify_write', array(), 'cpf-sender');
 }
 
 /**
@@ -189,9 +196,14 @@ function cpf_sender_do_cleanup() {
 add_action('cpf_sender_check_pending', 'cpf_sender_process_stale_pending');
 
 function cpf_sender_process_stale_pending() {
+    // Sinal de vida: usado por um health-check externo (API Lab Resumos + Cloud Scheduler)
+    // pra detectar se esta rede de segurança parou de rodar, sem depender do próprio
+    // WordPress pra avisar sobre uma falha do próprio WordPress.
+    update_option('cpf_sender_last_heartbeat', time());
+
     // Processar pendências de clientes
     cpf_sender_process_pending_by_type('cliente');
-    
+
     // Processar pendências de afiliados
     cpf_sender_process_pending_by_type('afiliado');
 }
@@ -1389,10 +1401,11 @@ const CPF_SENDER_VERIFY_DELAY_SECONDS = 15;
 const CPF_SENDER_VERIFY_MAX_ATTEMPTS = 3;
 
 function cpf_sender_schedule_write_verification($user_id, $email, $type, $attempt) {
-    wp_schedule_single_event(
+    as_schedule_single_action(
         time() + CPF_SENDER_VERIFY_DELAY_SECONDS,
         'cpf_sender_verify_write',
-        array($user_id, $email, $type, $attempt)
+        array($user_id, $email, $type, $attempt),
+        'cpf-sender'
     );
 }
 
@@ -1520,12 +1533,18 @@ function cpf_sender_execute_verify_write($user_id, $email, $type = 'cliente', $a
 add_action('eb_created_user', 'cpf_sender_after_user_created', 100, 2);
 
 function cpf_sender_after_user_created($user_id, $user_data = array()) {
+    // Auto-recuperação: garante que a rede de segurança de retry está de pé antes de
+    // depender dela. Ver cpf_sender_ensure_check_pending_scheduled() — cobre o caso da fila
+    // do Action Scheduler ser zerada (migração de servidor, restore de banco) sem o plugin
+    // ser reativado.
+    cpf_sender_ensure_check_pending_scheduled();
+
     // Verificar se já foi enviado
     $status = get_user_meta($user_id, '_cpf_sender_status', true);
     if ($status === 'success') {
         return; // Já enviado com sucesso, não reenviar
     }
-    
+
     // Agendar envio do CPF (cliente)
     cpf_sender_schedule_send($user_id, 'cliente', 'Criação de usuário Edwiser Bridge');
 }
@@ -1580,12 +1599,13 @@ function cpf_sender_schedule_send($user_id, $type = 'cliente', $reason = 'Agenda
     
     if ($delay > 0) {
         // Agendar envio com delay
-        wp_schedule_single_event(
+        as_schedule_single_action(
             time() + $delay,
             'cpf_sender_scheduled_send',
-            array($user_id, $type)
+            array($user_id, $type),
+            'cpf-sender'
         );
-        
+
         // Marcar como pendente com timestamp e contador
         cpf_sender_set_pending_status($user_id, $reason . " ({$type})", $type);
     } else {
@@ -1656,10 +1676,21 @@ function cpf_sender_execute_scheduled($user_id, $type = 'cliente') {
 /**
  * Fallback caso Edwiser Bridge não dispare o hook
  * Verifica se o plugin está ativo antes de usar
+ *
+ * Dois gatilhos independentes pro mesmo fallback: `payment_complete` é o hook mais confiável
+ * pra "pagamento confirmado" (dispara antes/independente do pedido chegar a "completed"), e
+ * `order_status_completed` cobre o caso do pedido ir direto pra completed sem passar por ali.
+ * Seguro duplicar: cpf_sender_woo_fallback() já é idempotente (checa _cpf_sender_status).
  */
+add_action('woocommerce_payment_complete', 'cpf_sender_woo_fallback', 100, 1);
 add_action('woocommerce_order_status_completed', 'cpf_sender_woo_fallback', 100, 1);
 
 function cpf_sender_woo_fallback($order_id) {
+    // Auto-recuperação: mesma garantia de cpf_sender_after_user_created(). Como este hook
+    // também dispara em woocommerce_payment_complete (ver abaixo), é chamado a cada compra
+    // independente do Edwiser Bridge estar ativo — ponto de entrada extra pra se auto-curar.
+    cpf_sender_ensure_check_pending_scheduled();
+
     // Se Edwiser Bridge está ativo, não usar fallback
     // O hook eb_created_user já vai disparar
     if (class_exists('Eb_Course') || function_exists('edwiser_bridge_instance')) {
@@ -2056,10 +2087,11 @@ function cpf_sender_schedule_telegram_check($user_id, $type = 'cliente') {
     $delay_seconds = $delay_minutes * 60;
     
     // Agendar verificação para daqui a X minutos
-    wp_schedule_single_event(
+    as_schedule_single_action(
         time() + $delay_seconds,
         'cpf_sender_telegram_check',
-        array($user_id, $type, time())
+        array($user_id, $type, time()),
+        'cpf-sender'
     );
 }
 
