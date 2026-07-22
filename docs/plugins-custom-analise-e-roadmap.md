@@ -546,3 +546,14 @@ curl -s -o /dev/null -w "%{http_code}\n" https://labresumos.com.br/finalizar-com
 > checagem de capability interna falha e o `post_status` não persiste (o script manual de
 > 2 passos acima, que edita o array do option direto, não depende disso e continua
 > funcionando sozinho pra parte funcional).
+
+### Fix — `cpf-sender-api` migrado pra Action Scheduler (2026-07-22)
+
+Incidente: rede de segurança de retry (`cpf_sender_check_pending`, WP-Cron a cada minuto) ficou
+sem agendamento por dias — provavelmente perdida na migração pro Napoleon — e um envio de CPF
+ficou preso em `pending` por ~3h sem retry e sem alerta, até resend manual. Versão **2.3.0**
+migra todo o agendamento (single events + o recorrente) pro Action Scheduler do WooCommerce,
+adiciona auto-recuperação nos hooks de compra, gatilho extra `woocommerce_payment_complete`,
+heartbeat, e um backstop cross-system independente (health-check na `api-laboratorio-resumos`
++ Google Cloud Scheduler) e cron real no servidor. Detalhe completo, runbook e pendências
+conhecidas em `docs/incidente-cpf-sender-wp-cron-2026-07-22.md`.
