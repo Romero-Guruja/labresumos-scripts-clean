@@ -557,3 +557,18 @@ adiciona auto-recuperação nos hooks de compra, gatilho extra `woocommerce_paym
 heartbeat, e um backstop cross-system independente (health-check na `api-laboratorio-resumos`
 + Google Cloud Scheduler) e cron real no servidor. Detalhe completo, runbook e pendências
 conhecidas em `docs/incidente-cpf-sender-wp-cron-2026-07-22.md`.
+
+### Fix — template Elementor de produto restaurado (2026-07-22, **não é bug do F3**)
+
+Relatado como "quebrou no port de ontem": páginas de produto mostrando o widget cru do Edwiser
+Bridge em vez do design da Lab Resumos. Investigação mostrou que **não tem relação com o F3**
+(nem `lab-resumos-storefront` nem nenhum outro plugin novo) — o template Elementor genérico de
+produto (post `101`, `include/product`) tinha o `_elementor_data` reduzido a um único widget,
+mesmo estado de um blip isolado já ocorrido em 07/01/2026 (visto no histórico de revisões).
+Ficou mascarado por meses pelo cache; a purga de cache real testada no F3d (§9, botão
+"Limpar Cache") foi o que revelou, não o que causou. Restaurado via SQL direto a partir da
+última revisão boa (post `2229`, 13/04). Afetava 34 dos 51 produtos publicados (todos sem a
+tag Flashcard). Detalhe completo — incluindo achado de método sobre `update_post_meta` via
+`wp eval` corromper JSON grande (usar SQL direto) e cache de objeto (Redis) ficar
+desatualizado após `UPDATE` via SQL puro (`wp cache flush` antes de verificar) — em
+`docs/incidente-elementor-template-produto-2026-07-22.md`.
