@@ -78,6 +78,16 @@ class LRP_Admin {
             [$this, 'render_payouts']
         );
         
+        // Conciliação - tudo que é devido (v1.8.0)
+        add_submenu_page(
+            'lrp-dashboard',
+            __('Conciliação', 'lab-resumos-parceiros'),
+            __('Conciliação', 'lab-resumos-parceiros'),
+            'lrp_manage_invoices',
+            'lrp-receivables',
+            [$this, 'render_receivables']
+        );
+        
         // Fechamento Manual (v1.8.0)
         add_submenu_page(
             'lrp-dashboard',
@@ -313,7 +323,43 @@ class LRP_Admin {
         $pending_payments = LRP_Closing::get_by_status('approved');
         $payment_history = LRP_Payout::get_payment_history(['limit' => 50]);
         
+        // Todos os fechamentos pendentes, incluindo os que não apareciam em
+        // tela nenhuma (awaiting_invoice/awaiting_rpa/rejected) - v1.8.0.
+        $all_pending = LRP_Closing::get_receivables();
+        $pending_total = 0.0;
+        foreach ($all_pending as $row) {
+            $pending_total += (float) $row->final_amount;
+        }
+        
         include LRP_PLUGIN_DIR . 'admin/partials/payouts.php';
+    }
+
+    /**
+     * Renderiza Conciliação (tudo que é devido)
+     *
+     * @since 1.8.0
+     */
+    public function render_receivables() {
+        $filters = [
+            'affiliate_id' => isset($_GET['affiliate_id']) ? (int) $_GET['affiliate_id'] : 0,
+            'status'       => isset($_GET['status']) ? sanitize_key($_GET['status']) : '',
+            'billing_type' => isset($_GET['billing_type']) ? sanitize_key($_GET['billing_type']) : '',
+            'period_from'  => isset($_GET['period_from']) ? sanitize_text_field($_GET['period_from']) : '',
+            'period_to'    => isset($_GET['period_to']) ? sanitize_text_field($_GET['period_to']) : '',
+        ];
+        
+        $receivables = LRP_Closing::get_receivables($filters);
+        $totals      = LRP_Closing::get_receivables_totals($filters);
+        
+        global $wpdb;
+        $affiliates = $wpdb->get_results(
+            "SELECT a.id, a.coupon_code, u.display_name
+             FROM {$wpdb->prefix}lrp_affiliates a
+             JOIN {$wpdb->users} u ON a.user_id = u.ID
+             ORDER BY u.display_name ASC"
+        );
+        
+        include LRP_PLUGIN_DIR . 'admin/partials/receivables.php';
     }
 
     /**

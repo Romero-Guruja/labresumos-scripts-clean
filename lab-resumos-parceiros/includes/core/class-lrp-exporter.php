@@ -422,10 +422,15 @@ class LRP_Exporter {
      * @return string
      */
     private static function translate_closing_status($status) {
+        if (class_exists('LRP_Closing')) {
+            return LRP_Closing::get_status_label($status);
+        }
+
         $statuses = [
             'open'             => 'Em andamento',
             'closed'           => 'Fechado (abaixo do mínimo)',
             'awaiting_invoice' => 'Aguardando NF',
+            'awaiting_rpa'     => 'Aguardando emissão de RPA',
             'invoice_received' => 'NF recebida',
             'approved'         => 'NF aprovada',
             'rejected'         => 'NF rejeitada',

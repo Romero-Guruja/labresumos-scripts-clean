@@ -3,7 +3,7 @@
  * Plugin Name: Programa de Parceiros Lab Resumos
  * Plugin URI: https://labresumos.com.br
  * Description: Sistema completo de afiliados com cupons exclusivos, links de rastreamento, estrutura multi-nível e integração com Guruja.
- * Version: 1.7.6
+ * Version: 1.8.0
  * Author: Lab Resumos
  * Author URI: https://labresumos.com.br
  * Text Domain: lab-resumos-parceiros
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes do plugin
-define('LRP_VERSION', '1.7.7');
+define('LRP_VERSION', '1.8.0');
 define('LRP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LRP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LRP_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -663,6 +663,51 @@ function lrp_maybe_upgrade() {
         update_option('lrp_db_version', '1.7.7');
 
         lrp_log('Upgrade para versão 1.7.7 concluído - Auto-referência configurável', [], 'info');
+    }
+
+    // Upgrade para 1.8.0 - Baixa manual de comissão + conciliação
+    if (version_compare($current_db_version, '1.8.0', '<')) {
+        global $wpdb;
+        $closings_table = $wpdb->prefix . 'lrp_closings';
+
+        $columns_to_add = [
+            'settled_manually'  => 'TINYINT(1) DEFAULT 0',
+            'settlement_method' => 'VARCHAR(30) DEFAULT NULL',
+            'settlement_reason' => 'TEXT DEFAULT NULL',
+            'settlement_date'   => 'DATE DEFAULT NULL',
+            'settled_by'        => 'BIGINT(20) UNSIGNED DEFAULT NULL',
+            'settled_at'        => 'DATETIME DEFAULT NULL',
+        ];
+
+        foreach ($columns_to_add as $column => $definition) {
+            $col_exists = $wpdb->get_results($wpdb->prepare(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                DB_NAME,
+                $closings_table,
+                $column
+            ));
+
+            if (empty($col_exists)) {
+                $wpdb->query("ALTER TABLE $closings_table ADD COLUMN $column $definition");
+            }
+        }
+
+        // Índice para a tela de conciliação filtrar baixa manual sem full scan.
+        $index_exists = $wpdb->get_results($wpdb->prepare(
+            "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = 'settled_manually'",
+            DB_NAME,
+            $closings_table
+        ));
+
+        if (empty($index_exists)) {
+            $wpdb->query("ALTER TABLE $closings_table ADD KEY settled_manually (settled_manually)");
+        }
+
+        update_option('lrp_db_version', '1.8.0');
+
+        lrp_log('Upgrade para versão 1.8.0 concluído - Baixa manual + conciliação', [], 'info');
     }
 }
 

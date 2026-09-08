@@ -110,6 +110,9 @@ class LRP_Admin_Payouts {
             'NF Número',
             'Valor',
             'Data Pagamento',
+            'Baixa Manual',
+            'Método da Baixa',
+            'Motivo da Baixa',
         ], ';');
         
         foreach ($payments as $p) {
@@ -123,9 +126,86 @@ class LRP_Admin_Payouts {
                 $p->invoice_number,
                 number_format($p->total_commissions, 2, ',', ''),
                 date('d/m/Y', strtotime($p->paid_at)),
+                !empty($p->settled_manually) ? 'Sim' : 'Não',
+                !empty($p->settled_manually) ? LRP_Closing::get_settlement_method_label($p->settlement_method) : '-',
+                !empty($p->settled_manually) ? (string) $p->settlement_reason : '-',
             ], ';');
         }
         
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Exporta a conciliação (tudo que é devido) para CSV
+     *
+     * Mesmas colunas da tela de Conciliação e mesma fonte de dados
+     * (LRP_Closing::get_receivables), para que tela e CSV nunca divirjam.
+     *
+     * @since 1.8.0
+     * @param array $filters
+     */
+    public static function export_receivables_csv($filters = []) {
+        $rows   = LRP_Closing::get_receivables($filters);
+        $totals = 0.0;
+
+        $filename = 'comissoes-devidas-' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, [
+            'ID Fechamento',
+            'Período',
+            'Parceiro',
+            'Email',
+            'Tipo',
+            'Titular',
+            'CPF/CNPJ',
+            'Status',
+            'Comissões',
+            'Ajustes',
+            'Total Devido',
+            'NF Número',
+            'Dias Parado',
+        ], ';');
+
+        foreach ($rows as $r) {
+            $totals += (float) $r->final_amount;
+
+            fputcsv($output, [
+                $r->id,
+                sprintf('%02d/%d', $r->period_month, $r->period_year),
+                $r->affiliate_name,
+                $r->affiliate_email,
+                strtoupper($r->billing_type ?: '-'),
+                $r->holder_name,
+                $r->holder_document,
+                LRP_Closing::get_status_label($r->status),
+                number_format((float) $r->total_commissions, 2, ',', ''),
+                number_format((float) $r->adjustments_sum, 2, ',', ''),
+                number_format((float) $r->final_amount, 2, ',', ''),
+                $r->invoice_number ?: '-',
+                $r->days_pending,
+            ], ';');
+        }
+
+        // Linha de total, para conferência imediata no Excel.
+        fputcsv($output, [], ';');
+        fputcsv($output, [
+            'TOTAL',
+            '',
+            count($rows) . ' fechamento(s)',
+            '', '', '', '', '', '', '',
+            number_format($totals, 2, ',', ''),
+            '', '',
+        ], ';');
+
         fclose($output);
         exit;
     }

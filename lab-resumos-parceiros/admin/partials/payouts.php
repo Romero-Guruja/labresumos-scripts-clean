@@ -10,6 +10,19 @@ if (!defined('ABSPATH')) exit;
 <div class="wrap lrp-admin-wrap">
     <h1><?php _e('Pagamentos', 'lab-resumos-parceiros'); ?></h1>
     
+    <div class="lrp-admin-notice" style="background:#fff;border-left:4px solid #1d2327;padding:12px 15px;margin:15px 0;">
+        <strong><?php _e('Total devido a parceiros (todas as etapas):', 'lab-resumos-parceiros'); ?></strong>
+        R$ <?php echo esc_html(number_format($pending_total, 2, ',', '.')); ?>
+        <span class="lrp-text-muted">(<?php echo count($all_pending); ?> <?php _e('fechamentos', 'lab-resumos-parceiros'); ?>)</span>
+        &nbsp;
+        <a href="<?php echo esc_url(admin_url('admin.php?page=lrp-receivables')); ?>" class="button button-small">
+            <?php _e('Abrir Conciliação', 'lab-resumos-parceiros'); ?>
+        </a>
+        <p class="description" style="margin:6px 0 0;">
+            <?php _e('A tabela abaixo mostra apenas os fechamentos já aprovados, faltando só pagar. Fechamentos aguardando NF ou RPA aparecem na Conciliação.', 'lab-resumos-parceiros'); ?>
+        </p>
+    </div>
+    
     <?php if (!empty($pending_invoices)): ?>
     <div class="lrp-admin-notice warning">
         <strong><?php _e('NFs Pendentes de Análise:', 'lab-resumos-parceiros'); ?></strong>
@@ -91,13 +104,14 @@ if (!defined('ABSPATH')) exit;
                     <th><?php _e('Período', 'lab-resumos-parceiros'); ?></th>
                     <th><?php _e('Valor Pago', 'lab-resumos-parceiros'); ?></th>
                     <th><?php _e('Ajustes', 'lab-resumos-parceiros'); ?></th>
+                    <th><?php _e('Origem', 'lab-resumos-parceiros'); ?></th>
                     <th><?php _e('Data Pagamento', 'lab-resumos-parceiros'); ?></th>
                     <th><?php _e('Pago por', 'lab-resumos-parceiros'); ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($payment_history)): ?>
-                <tr><td colspan="6"><?php _e('Nenhum pagamento realizado.', 'lab-resumos-parceiros'); ?></td></tr>
+                <tr><td colspan="7"><?php _e('Nenhum pagamento realizado.', 'lab-resumos-parceiros'); ?></td></tr>
                 <?php else: ?>
                 <?php foreach ($payment_history as $h): 
                     // Calcula ajustes do novo sistema
@@ -121,7 +135,17 @@ if (!defined('ABSPATH')) exit;
                                 <?php echo $h_total_adjustments > 0 ? '+' : ''; ?>R$ <?php echo esc_html(number_format($h_total_adjustments, 2, ',', '.')); ?>
                             </span>
                         <?php else: ?>
-                            <span class="lrp-text-muted">—</span>
+                            <span class="lrp-text-muted">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if (!empty($h->settled_manually)): ?>
+                            <span class="lrp-badge-manual" title="<?php echo esc_attr($h->settlement_reason); ?>">
+                                <?php _e('Baixa manual', 'lab-resumos-parceiros'); ?>
+                                (<?php echo esc_html(LRP_Closing::get_settlement_method_label($h->settlement_method)); ?>)
+                            </span>
+                        <?php else: ?>
+                            <span class="lrp-text-muted"><?php _e('Fluxo normal', 'lab-resumos-parceiros'); ?></span>
                         <?php endif; ?>
                     </td>
                     <td><?php echo esc_html(date_i18n('d/m/Y H:i', strtotime($h->paid_at))); ?></td>
@@ -147,4 +171,5 @@ if (!defined('ABSPATH')) exit;
 .lrp-text-success { color: #46b450; }
 .lrp-text-danger { color: #dc3232; }
 .lrp-text-muted { color: #999; }
+.lrp-badge-manual { display:inline-block; padding:3px 8px; border-radius:4px; font-size:12px; font-weight:500; background:#f0e6ff; color:#5b2d90; }
 </style>
