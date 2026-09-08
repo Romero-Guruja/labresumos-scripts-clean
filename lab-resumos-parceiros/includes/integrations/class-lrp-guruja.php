@@ -220,30 +220,39 @@ class LRP_Guruja {
         
         $coupon_handler = LRP_Coupon_Handler::instance();
         $affiliate = $coupon_handler->get_affiliate_from_cart_coupon();
-        
-        // Se não tem cupom de afiliado, deixa Guruja funcionar normalmente
-        if (!$affiliate) {
+
+        // Cupom de afiliado, se houver; senão, qualquer outro cupom aplicado
+        // (promocional, boas-vindas, etc.) — nenhum tipo de cupom deve
+        // empilhar com o desconto Guruja.
+        $coupon_code = $affiliate
+            ? $coupon_handler->get_affiliate_coupon_from_cart()
+            : $coupon_handler->get_any_coupon_from_cart();
+
+        // Sem nenhum cupom no carrinho, deixa Guruja funcionar normalmente
+        if (!$coupon_code) {
             return;
         }
-        
-        // Tem cupom de afiliado - precisa decidir
+
+        // Tem cupom - precisa decidir
         $guruja_discount = $this->calculate_guruja_discount_total();
-        $affiliate_discount = $this->calculate_affiliate_coupon_discount();
-        
+        $coupon_discount = $affiliate
+            ? $this->calculate_affiliate_coupon_discount()
+            : $coupon_handler->calculate_coupon_discount($coupon_code);
+
         // Se não é elegível Guruja, não faz nada (cupom funciona normal)
         if ($guruja_discount <= 0) {
             $this->affiliate_discount_applied = true;
             return;
         }
-        
-        // Ambos os descontos disponíveis - aplica regra
-        $rule = $affiliate->get_guruja_rule();
-        
+
+        // Ambos os descontos disponíveis - aplica regra.
+        // Cupons não-afiliados não têm regra configurável: seguem sempre
+        // "maior desconto vence".
+        $rule = $affiliate ? $affiliate->get_guruja_rule() : 'higher_discount';
+
         $this->guruja_discount_amount = $guruja_discount;
-        $this->affiliate_discount_amount = $affiliate_discount;
-        
-        $coupon_code = $coupon_handler->get_affiliate_coupon_from_cart();
-        
+        $this->affiliate_discount_amount = $coupon_discount;
+
         switch ($rule) {
             case 'affiliate_priority':
                 // Remove desconto Guruja, mantém cupom
@@ -251,41 +260,42 @@ class LRP_Guruja {
                 $this->block_affiliate_coupon = false;
                 $this->blocked_coupon_code = null;
                 $this->affiliate_discount_applied = true;
-                
+
                 // Marca para evitar que Guruja re-aplique via JavaScript
                 $this->mark_guruja_rejected_for_coupon($coupon_code);
-                
+
                 lrp_log('Regra affiliate_priority: cupom prevalece', [
                     'affiliate_id'       => $affiliate->get_id(),
-                    'affiliate_discount' => $affiliate_discount,
+                    'affiliate_discount' => $coupon_discount,
                     'guruja_discount'    => $guruja_discount,
                 ]);
                 break;
-                
+
             case 'guruja_priority':
                 // Remove cupom graciosamente, deixa Guruja
                 $this->remove_affiliate_coupon_gracefully($coupon_code, $guruja_discount);
                 $this->guruja_discount_applied = true;
-                
+
                 lrp_log('Regra guruja_priority: Guruja prevalece', [
                     'affiliate_id'       => $affiliate->get_id(),
-                    'affiliate_discount' => $affiliate_discount,
+                    'affiliate_discount' => $coupon_discount,
                     'guruja_discount'    => $guruja_discount,
                 ]);
                 break;
-                
+
             case 'no_commission':
             case 'higher_discount':
             default:
                 // Aplica o maior
-                if ($guruja_discount >= $affiliate_discount) {
+                if ($guruja_discount >= $coupon_discount) {
                     // Guruja é maior ou igual - remove cupom graciosamente
                     $this->remove_affiliate_coupon_gracefully($coupon_code, $guruja_discount);
                     $this->guruja_discount_applied = true;
-                    
+
                     lrp_log('Regra higher_discount: Guruja maior', [
-                        'affiliate_id'       => $affiliate->get_id(),
-                        'affiliate_discount' => $affiliate_discount,
+                        'affiliate_id'       => $affiliate ? $affiliate->get_id() : null,
+                        'coupon_code'        => $coupon_code,
+                        'coupon_discount'    => $coupon_discount,
                         'guruja_discount'    => $guruja_discount,
                     ]);
                 } else {
@@ -294,13 +304,14 @@ class LRP_Guruja {
                     $this->block_affiliate_coupon = false;
                     $this->blocked_coupon_code = null;
                     $this->affiliate_discount_applied = true;
-                    
+
                     // Marca para evitar que Guruja re-aplique via JavaScript
                     $this->mark_guruja_rejected_for_coupon($coupon_code);
-                    
+
                     lrp_log('Regra higher_discount: Cupom maior', [
-                        'affiliate_id'       => $affiliate->get_id(),
-                        'affiliate_discount' => $affiliate_discount,
+                        'affiliate_id'       => $affiliate ? $affiliate->get_id() : null,
+                        'coupon_code'        => $coupon_code,
+                        'coupon_discount'    => $coupon_discount,
                         'guruja_discount'    => $guruja_discount,
                     ]);
                 }
@@ -469,8 +480,8 @@ class LRP_Guruja {
             return false;
         }
         
-        // Verifica se o cupom ainda está no carrinho
-        $current_coupon = LRP_Coupon_Handler::instance()->get_affiliate_coupon_from_cart();
+        // Verifica se o cupom ainda está no carrinho (afiliado ou não)
+        $current_coupon = LRP_Coupon_Handler::instance()->get_any_coupon_from_cart();
         if (!$current_coupon || strtolower($current_coupon) !== strtolower($data['coupon_code'])) {
             WC()->session->set('lrp_guruja_rejected', null);
             return false;
@@ -592,9 +603,9 @@ class LRP_Guruja {
     public function final_discount_check() {
         $guruja_data = $this->get_guruja_discount_data();
         $coupon_handler = LRP_Coupon_Handler::instance();
-        $affiliate_coupon = $coupon_handler->get_affiliate_coupon_from_cart();
-        
-        if ($guruja_data && $affiliate_coupon) {
+        $cart_coupon = $coupon_handler->get_any_coupon_from_cart();
+
+        if ($guruja_data && $cart_coupon) {
             // Conflito! Força resolução
             $this->coordinate_discounts(WC()->cart);
         }

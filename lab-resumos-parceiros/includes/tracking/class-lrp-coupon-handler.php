@@ -120,12 +120,31 @@ class LRP_Coupon_Handler {
      */
     public function get_affiliate_from_cart_coupon() {
         $coupon_code = $this->get_affiliate_coupon_from_cart();
-        
+
         if (!$coupon_code) {
             return null;
         }
-        
+
         return $this->get_affiliate_from_coupon($coupon_code);
+    }
+
+    /**
+     * Obtém qualquer cupom aplicado no carrinho (afiliado ou não)
+     *
+     * Usado pela coordenação Guruja x cupom para cobrir também cupons
+     * genéricos (promocionais, de boas-vindas, etc.) que não têm o meta
+     * _lrp_is_affiliate_coupon.
+     *
+     * @return string|null
+     */
+    public function get_any_coupon_from_cart() {
+        if (!WC()->cart) {
+            return null;
+        }
+
+        $coupons = WC()->cart->get_applied_coupons();
+
+        return $coupons ? reset($coupons) : null;
     }
 
     /**
@@ -310,22 +329,31 @@ class LRP_Coupon_Handler {
      * @return float
      */
     public function calculate_affiliate_coupon_discount() {
-        $coupon_code = $this->get_affiliate_coupon_from_cart();
-        
-        if (!$coupon_code) {
+        return $this->calculate_coupon_discount($this->get_affiliate_coupon_from_cart());
+    }
+
+    /**
+     * Calcula o valor de desconto de um cupom qualquer no carrinho
+     * (afiliado ou genérico)
+     *
+     * @param string|null $coupon_code
+     * @return float
+     */
+    public function calculate_coupon_discount($coupon_code) {
+        if (!$coupon_code || !WC()->cart) {
             return 0;
         }
-        
+
         $coupon = new WC_Coupon($coupon_code);
         $discount_type = $coupon->get_discount_type();
         $amount = $coupon->get_amount();
-        
+
         $cart_total = WC()->cart->get_subtotal();
-        
+
         if ($discount_type === 'percent') {
             return $cart_total * ($amount / 100);
         }
-        
+
         return $amount;
     }
 }

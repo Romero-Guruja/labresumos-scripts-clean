@@ -32,7 +32,8 @@ class LRP_Admin_Reports {
                 COUNT(DISTINCT r.affiliate_id) as active_affiliates
              FROM {$wpdb->prefix}lrp_referrals r
              LEFT JOIN {$wpdb->prefix}lrp_commissions c ON r.id = c.referral_id AND c.commission_type = 'direct'
-             WHERE r.created_at BETWEEN %s AND %s",
+             WHERE r.status = 'approved'
+             AND r.created_at BETWEEN %s AND %s",
             $start_date,
             $end_date
         ), ARRAY_A);
@@ -83,6 +84,7 @@ class LRP_Admin_Reports {
              FROM {$wpdb->prefix}lrp_affiliates a
              JOIN {$wpdb->users} u ON a.user_id = u.ID
              LEFT JOIN {$wpdb->prefix}lrp_referrals r ON a.id = r.affiliate_id 
+                AND r.status = 'approved'
                 AND r.created_at BETWEEN %s AND %s
              LEFT JOIN {$wpdb->prefix}lrp_commissions c ON r.id = c.referral_id 
                 AND c.commission_type = 'direct'

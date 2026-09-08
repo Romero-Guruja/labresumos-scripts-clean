@@ -177,6 +177,37 @@ class LRP_Attribution {
     }
 
     /**
+     * Verifica auto-referência via e-mail de checkout como convidado.
+     *
+     * should_block_self_referral() só pega o caso do afiliado estar logado.
+     * Um afiliado pode comprar como convidado digitando o próprio e-mail no
+     * checkout e passar por essa checagem, recebendo comissão da própria compra.
+     * Aqui comparamos o e-mail de faturamento do pedido com o e-mail de
+     * cadastro (wp_users) do afiliado, independente de login.
+     *
+     * @param LRP_Affiliate $affiliate
+     * @param WC_Order $order
+     * @return bool True se deve bloquear a comissão
+     */
+    private function is_self_referral_by_order_email($affiliate, $order) {
+        if ($affiliate->can_self_refer()) {
+            return false;
+        }
+
+        $order_email = strtolower(trim((string) $order->get_billing_email()));
+        if (!$order_email) {
+            return false;
+        }
+
+        $user = get_userdata($affiliate->get_user_id());
+        if (!$user) {
+            return false;
+        }
+
+        return $order_email === strtolower(trim((string) $user->user_email));
+    }
+
+    /**
      * Processa atribuição quando pedido é criado
      *
      * @param int $order_id
@@ -272,6 +303,20 @@ class LRP_Attribution {
             $order->save();
             
             lrp_log('Atribuição cumulativa sem comissão (regra Guruja)', [
+                'order_id'     => $order_id,
+                'affiliate_id' => $affiliate->get_id(),
+            ]);
+            return;
+        }
+        
+        // Auto-referência via checkout como convidado
+        if ($this->is_self_referral_by_order_email($affiliate, $order)) {
+            $order->update_meta_data('_lrp_affiliate_id', $affiliate->get_id());
+            $order->update_meta_data('_lrp_attribution_type', 'both');
+            $order->update_meta_data('_lrp_no_commission_reason', 'self_referral_guest_email');
+            $order->save();
+            
+            lrp_log('Atribuição cumulativa sem comissão (auto-referência via e-mail de convidado)', [
                 'order_id'     => $order_id,
                 'affiliate_id' => $affiliate->get_id(),
             ]);
@@ -494,6 +539,16 @@ class LRP_Attribution {
             return null;
         }
         
+        // Auto-referência via checkout como convidado
+        if ($this->is_self_referral_by_order_email($affiliate, $order)) {
+            lrp_log('Afiliado não ganha comissão (auto-referência via e-mail de convidado)', [
+                'order_id'     => $order_id,
+                'affiliate_id' => $affiliate->get_id(),
+                'type'         => $attribution_type,
+            ]);
+            return null;
+        }
+        
         // Verifica restrições de produtos
         $restriction_handler = LRP_Product_Restriction::instance();
         $filtered_products = $restriction_handler->filter_order_products($affiliate->get_id(), $order);
@@ -595,6 +650,20 @@ class LRP_Attribution {
             $order->save();
             
             lrp_log('Atribuição sem comissão (regra Guruja)', [
+                'order_id'     => $order_id,
+                'affiliate_id' => $affiliate->get_id(),
+            ]);
+            return;
+        }
+        
+        // Auto-referência via checkout como convidado (e-mail igual ao do afiliado)
+        if ($this->is_self_referral_by_order_email($affiliate, $order)) {
+            $order->update_meta_data('_lrp_affiliate_id', $affiliate->get_id());
+            $order->update_meta_data('_lrp_attribution_type', $attribution['type']);
+            $order->update_meta_data('_lrp_no_commission_reason', 'self_referral_guest_email');
+            $order->save();
+            
+            lrp_log('Atribuição sem comissão (auto-referência via e-mail de convidado)', [
                 'order_id'     => $order_id,
                 'affiliate_id' => $affiliate->get_id(),
             ]);

@@ -126,12 +126,128 @@ class LRP_Public {
     }
 
     /**
+     * Exporta todos os links de afiliado (cupom + link geral + link por produto) em .txt.
+     * Pedido do usuário (2026-09-05): "exportar um arquivo txt mesmo com todos os nossos links".
+     *
+     * Roda em 'init' (prioridade 20, depois dos shortcodes) e verifica o parâmetro
+     * 'lrp_export_links' - se não estiver presente, não faz nada (custo zero nas outras páginas).
+     */
+    public function maybe_export_links() {
+        if (empty($_GET['lrp_export_links'])) {
+            return;
+        }
+
+        if (!is_user_logged_in()) {
+            wp_die(__('Você precisa estar logado para exportar seus links.', 'lab-resumos-parceiros'), '', ['response' => 403]);
+        }
+
+        // Admin em modo preview pode exportar os links de outro afiliado (mesmo padrão do dashboard)
+        $preview_affiliate_id = isset($_GET['preview_as']) ? (int) $_GET['preview_as'] : 0;
+
+        if ($preview_affiliate_id && current_user_can('manage_options')) {
+            $affiliate = new LRP_Affiliate($preview_affiliate_id);
+            if (!$affiliate->exists()) {
+                wp_die(__('Afiliado não encontrado.', 'lab-resumos-parceiros'), '', ['response' => 404]);
+            }
+        } else {
+            $affiliate = LRP_Affiliate::get_by_user_id(get_current_user_id());
+            if (!$affiliate) {
+                wp_die(__('Você ainda não é um parceiro Lab Resumos.', 'lab-resumos-parceiros'), '', ['response' => 403]);
+            }
+        }
+
+        $nonce = isset($_GET['lrp_export_nonce']) ? $_GET['lrp_export_nonce'] : '';
+        if (!wp_verify_nonce($nonce, 'lrp_export_links_' . $affiliate->get_id())) {
+            wp_die(__('Link de exportação expirado. Recarregue a página e tente novamente.', 'lab-resumos-parceiros'), '', ['response' => 403]);
+        }
+
+        $this->export_links_txt($affiliate);
+        exit;
+    }
+
+    /**
+     * Gera e envia o .txt com todos os links do afiliado.
+     *
+     * @param LRP_Affiliate $affiliate
+     */
+    private function export_links_txt($affiliate) {
+        $coupon_code   = $affiliate->get_coupon_code();
+        $link_rate     = $affiliate->get_commission_rate('link');
+        $coupon_rate   = $affiliate->get_commission_rate('coupon');
+        $general_link  = $affiliate->get_referral_url();
+
+        $lines = [];
+        $lines[] = 'Lab Resumos - Links de Afiliado';
+        $lines[] = 'Parceiro: ' . $affiliate->get_display_name();
+        $lines[] = 'Gerado em: ' . date_i18n('d/m/Y H:i');
+        $lines[] = str_repeat('=', 60);
+        $lines[] = '';
+        $lines[] = 'CUPOM DE DESCONTO';
+        $lines[] = 'Código: ' . $coupon_code;
+        $lines[] = 'Sua comissão (cupom): ' . number_format($coupon_rate, 0) . '%';
+        $lines[] = '';
+        $lines[] = 'LINK GERAL DE AFILIADO';
+        $lines[] = $general_link;
+        $lines[] = 'Sua comissão (link): ' . number_format($link_rate, 0) . '%';
+        $lines[] = '';
+        $lines[] = str_repeat('=', 60);
+        $lines[] = 'LINKS POR PRODUTO';
+        $lines[] = str_repeat('=', 60);
+        $lines[] = '';
+
+        // Busca TODOS os produtos publicados (sem paginação - é exatamente o que o pedido do
+        // usuário resolve: em vez de navegar página por página, ele recebe tudo de uma vez).
+        $products_query = new WP_Query([
+            'post_type'      => 'product',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'orderby'        => ['title' => 'ASC', 'ID' => 'ASC'],
+            'no_found_rows'  => true,
+            'fields'         => 'ids',
+        ]);
+
+        $ref_code = $affiliate->get_referral_code();
+
+        foreach ($products_query->posts as $product_id) {
+            $product = wc_get_product($product_id);
+            if (!$product) {
+                continue;
+            }
+
+            $product_url = $product->get_permalink();
+            $ref_url = add_query_arg('ref', $ref_code, $product_url);
+
+            $lines[] = $product->get_name();
+            $lines[] = $ref_url;
+            $lines[] = '';
+        }
+
+        $content = implode("\r\n", $lines);
+        $filename = 'links-afiliado-' . sanitize_title($affiliate->get_display_name()) . '-' . date('Y-m-d') . '.txt';
+
+        nocache_headers();
+        header('Content-Type: text/plain; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+        header('Content-Length: ' . strlen($content));
+        echo $content;
+    }
+
+    /**
      * Shortcode do dashboard
      *
      * @param array $atts
      * @return string
      */
     public function shortcode_dashboard($atts) {
+        // Dados financeiros/estado pessoal mudam em tempo real (upload de NF, aprovação,
+        // rejeição, pagamento) - nunca cachear esta página no LiteSpeed/proxy, senão o
+        // afiliado pode ver um estado antigo (ex: \"Aguardando NF\" já enviada) e tentar
+        // reenviar, caindo no guard de status e recebendo erro genérico.
+        if (function_exists("do_action")) {
+            do_action("litespeed_control_set_nocache", "lrp affiliate dashboard - dados pessoais/financeiros");
+        }
+        nocache_headers();
+
         // Verifica se está logado
         if (!is_user_logged_in()) {
             return $this->get_login_message();

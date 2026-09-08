@@ -54,6 +54,10 @@ class LRP_WooCommerce {
         add_action('woocommerce_order_status_processing', [$this, 'on_order_processing']);
         add_action('woocommerce_order_status_refunded', [$this, 'on_order_refunded']);
         add_action('woocommerce_order_status_cancelled', [$this, 'on_order_cancelled']);
+
+        // Reembolso PARCIAL não muda o status do pedido (continua completed/processing),
+        // então precisa de hook próprio para reduzir a comissão proporcionalmente.
+        add_action('woocommerce_order_refunded', [$this, 'on_order_partial_refund'], 10, 2);
         
         // Exibe info de afiliado no admin do pedido
         add_action('woocommerce_admin_order_data_after_billing_address', [$this, 'display_order_affiliate_info']);
@@ -223,6 +227,133 @@ class LRP_WooCommerce {
      */
     public function on_order_refunded($order_id) {
         $this->cancel_commission($order_id, 'refunded');
+    }
+
+    /**
+     * Quando um reembolso (total ou parcial) é criado no WooCommerce.
+     *
+     * Reembolso PARCIAL não dispara mudança de status do pedido (ele continua
+     * 'completed'/'processing'), então sem este hook a comissão ficava intacta
+     * mesmo depois do cliente receber parte do dinheiro de volta.
+     *
+     * Se o reembolso for igual ao total do pedido, o status do pedido já
+     * muda para 'refunded' e on_order_refunded() cuida do cancelamento —
+     * aqui a gente ignora esse caso para não duplicar o ajuste.
+     *
+     * @param int $order_id
+     * @param int $refund_id
+     */
+    public function on_order_partial_refund($order_id, $refund_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+
+        // Reembolso total: já tratado por on_order_refunded via mudança de status.
+        if ($order->has_status('refunded')) {
+            return;
+        }
+
+        $refund = wc_get_order($refund_id);
+        if (!$refund) {
+            return;
+        }
+
+        // Valor absoluto reembolsado nesta operação (refund->get_total() é negativo)
+        $refund_amount = abs((float) $refund->get_total());
+        if ($refund_amount <= 0) {
+            return;
+        }
+
+        $referral_ids = $order->get_meta('_lrp_referral_ids', true);
+        if (empty($referral_ids)) {
+            $referral_id = $order->get_meta('_lrp_referral_id', true);
+            $referral_ids = $referral_id ? [$referral_id] : [];
+        }
+
+        if (empty($referral_ids)) {
+            return;
+        }
+
+        // Proporção reembolsada em relação ao total ORIGINAL do pedido
+        // (get_total() já reflete os reembolsos anteriores, então somamos de volta)
+        $original_total = (float) $order->get_total() + (float) $order->get_total_refunded();
+        if ($original_total <= 0) {
+            return;
+        }
+
+        $refund_ratio = min(1, $refund_amount / $original_total);
+
+        global $wpdb;
+        $affiliate_ids_updated = [];
+
+        foreach ($referral_ids as $referral_id) {
+            $referral = LRP_Referral::get($referral_id);
+            if (!$referral || $referral->get_status() === 'refunded') {
+                continue;
+            }
+
+            $commissions = LRP_Commission::get_by_referral($referral_id);
+
+            foreach ($commissions as $commission) {
+                if (in_array($commission->get_status(), ['cancelled'], true)) {
+                    continue;
+                }
+
+                $current_amount = $commission->get_commission_amount();
+                $reduction = round($current_amount * $refund_ratio, 2);
+                if ($reduction <= 0) {
+                    continue;
+                }
+                $new_amount = max(0, round($current_amount - $reduction, 2));
+
+                if ($commission->get_status() === 'paid') {
+                    // Já foi pago ao afiliado: não reduz o valor pago (fato consumado),
+                    // registra um ajuste negativo para descontar do próximo fechamento.
+                    // Insere direto na tabela (não usa LRP_Adjustment::create) porque este
+                    // hook roda sem usuário logado com capability em contextos de API/webhook.
+                    $wpdb->insert(
+                        $wpdb->prefix . 'lrp_adjustments',
+                        [
+                            'affiliate_id' => (int) $commission->get_affiliate_id(),
+                            'amount'       => -$reduction,
+                            'reason'       => sprintf(
+                                'Reembolso parcial do pedido #%d (comissão já paga) - referral #%d',
+                                $order_id,
+                                $referral_id
+                            ),
+                            'status'       => 'pending',
+                            'created_by'   => 0,
+                            'created_at'   => current_time('mysql'),
+                        ],
+                        ['%d', '%f', '%s', '%s', '%d', '%s']
+                    );
+                } else {
+                    // pending/approved: reduz o valor da comissão diretamente
+                    $wpdb->update(
+                        $wpdb->prefix . 'lrp_commissions',
+                        ['commission_amount' => $new_amount],
+                        ['id' => $commission->get_id()]
+                    );
+                }
+
+                $affiliate_ids_updated[] = $commission->get_affiliate_id();
+            }
+
+            lrp_log('Comissão reduzida por reembolso parcial', [
+                'order_id'      => $order_id,
+                'refund_id'     => $refund_id,
+                'referral_id'   => $referral_id,
+                'refund_amount' => $refund_amount,
+                'refund_ratio'  => $refund_ratio,
+            ]);
+        }
+
+        $affiliate_ids_updated = array_unique($affiliate_ids_updated);
+        foreach ($affiliate_ids_updated as $affiliate_id) {
+            $affiliate = new LRP_Affiliate($affiliate_id);
+            $affiliate->refresh_stats();
+        }
     }
 
     /**
