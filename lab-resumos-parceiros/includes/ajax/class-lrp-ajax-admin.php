@@ -69,6 +69,9 @@ class LRP_Ajax_Admin {
         // Confirmar pagamento
         add_action('wp_ajax_lrp_confirm_payment', [$this, 'confirm_payment']);
         
+        // Baixa manual de fechamento pago fora do sistema (v1.8.0)
+        add_action('wp_ajax_lrp_manual_settle', [$this, 'manual_settle']);
+        
         // Salvar material
         add_action('wp_ajax_lrp_save_material', [$this, 'save_material']);
         
@@ -527,6 +530,46 @@ class LRP_Ajax_Admin {
     }
 
     /**
+     * Registra baixa manual (pagamento feito fora do sistema)
+     *
+     * @since 1.8.0
+     */
+    public function manual_settle() {
+        $this->verify_admin_nonce();
+
+        if (!current_user_can('lrp_manage_payments')) {
+            wp_send_json_error(['message' => __('Sem permissão.', 'lab-resumos-parceiros')]);
+        }
+
+        $closing_id = (int) ($_POST['closing_id'] ?? 0);
+
+        if (!$closing_id) {
+            wp_send_json_error(['message' => __('Fechamento não informado.', 'lab-resumos-parceiros')]);
+        }
+
+        $args = [
+            'method' => sanitize_key($_POST['method'] ?? ''),
+            'date'   => sanitize_text_field($_POST['date'] ?? ''),
+            'reason' => sanitize_textarea_field($_POST['reason'] ?? ''),
+        ];
+
+        // Comprovante é opcional nesse fluxo.
+        if (!empty($_FILES['proof_file']) && !empty($_FILES['proof_file']['tmp_name'])) {
+            $args['proof_file'] = $_FILES['proof_file'];
+        }
+
+        $result = LRP_Closing::manual_settle($closing_id, $args);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Baixa manual registrada. O fechamento saiu da lista de comissões devidas.', 'lab-resumos-parceiros'),
+        ]);
+    }
+
+    /**
      * Salva material
      */
     public function save_material() {
@@ -657,6 +700,16 @@ class LRP_Ajax_Admin {
                 break;
             case 'payments':
                 LRP_Admin_Payouts::export_csv($filters);
+                break;
+            case 'receivables':
+                // Conciliação: tudo que é devido (v1.8.0)
+                LRP_Admin_Payouts::export_receivables_csv([
+                    'affiliate_id' => (int) ($_GET['affiliate_id'] ?? 0),
+                    'status'       => sanitize_key($_GET['status'] ?? ''),
+                    'billing_type' => sanitize_key($_GET['billing_type'] ?? ''),
+                    'period_from'  => sanitize_text_field($_GET['period_from'] ?? ''),
+                    'period_to'    => sanitize_text_field($_GET['period_to'] ?? ''),
+                ]);
                 break;
             default:
                 LRP_Admin_Affiliates::export_csv($filters);

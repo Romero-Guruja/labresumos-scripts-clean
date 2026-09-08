@@ -17,6 +17,60 @@ if (!defined('ABSPATH')) {
 class LRP_Closing {
 
     /**
+     * Status que representam valor DEVIDO ao parceiro (ainda não pago).
+     *
+     * Fonte de verdade única: tela de Conciliação, CSV, soma do dashboard e
+     * `sum_pending_amount()` leem daqui. Antes disso, a tela de Pagamentos
+     * mostrava só `approved` enquanto a soma considerava 4 status - dois
+     * números diferentes para a mesma pergunta.
+     *
+     * @since 1.8.0
+     * @var array
+     */
+    const PENDING_STATUSES = [
+        'awaiting_invoice',
+        'awaiting_rpa',
+        'invoice_received',
+        'rejected',
+        'approved',
+    ];
+
+    /**
+     * Métodos aceitos na baixa manual (pagamento feito fora do sistema).
+     *
+     * @since 1.8.0
+     * @var array
+     */
+    const SETTLEMENT_METHODS = [
+        'rpa'          => 'RPA',
+        'pix'          => 'PIX',
+        'transferencia'=> 'Transferência bancária',
+        'nf_externa'   => 'NF paga fora do sistema',
+        'outro'        => 'Outro',
+    ];
+
+    /**
+     * Lista de status pendentes pronta para SQL (`'a','b',...`).
+     *
+     * @since 1.8.0
+     * @return string
+     */
+    public static function pending_statuses_sql() {
+        return "'" . implode("','", self::PENDING_STATUSES) . "'";
+    }
+
+    /**
+     * Rótulo do método de baixa manual.
+     *
+     * @since 1.8.0
+     * @param string $method
+     * @return string
+     */
+    public static function get_settlement_method_label($method) {
+        return self::SETTLEMENT_METHODS[$method] ?? ($method ?: '-');
+    }
+
+    /**
      * Busca fechamento por ID
      *
      * @param int $id
@@ -139,11 +193,13 @@ class LRP_Closing {
     public static function sum_pending_amount() {
         global $wpdb;
         
+        $statuses = self::pending_statuses_sql();
+        
         // Soma comissões dos fechamentos pendentes
         $commissions_sum = (float) $wpdb->get_var(
             "SELECT COALESCE(SUM(total_commissions + COALESCE(adjustment_amount, 0)), 0) 
              FROM {$wpdb->prefix}lrp_closings 
-             WHERE status IN ('awaiting_invoice', 'awaiting_rpa', 'invoice_received', 'approved')"
+             WHERE status IN ($statuses)"
         );
         
         // Soma ajustes do novo sistema vinculados a fechamentos pendentes (v1.4.0)
@@ -151,7 +207,7 @@ class LRP_Closing {
         if (class_exists('LRP_Adjustment')) {
             $closing_ids = $wpdb->get_col(
                 "SELECT id FROM {$wpdb->prefix}lrp_closings 
-                 WHERE status IN ('awaiting_invoice', 'awaiting_rpa', 'invoice_received', 'approved')"
+                 WHERE status IN ($statuses)"
             );
             
             if (!empty($closing_ids)) {
@@ -857,6 +913,344 @@ class LRP_Closing {
         }
         
         return $result !== false ? true : new WP_Error('db_error', __('Erro ao atualizar.', 'lab-resumos-parceiros'));
+    }
+
+    /**
+     * Baixa manual: registra pagamento feito FORA do sistema.
+     *
+     * Existe porque a máquina de estados não tinha porta de saída lateral.
+     * Caso real: parceira cadastrada como PJ/NF foi paga via RPA por fora, e o
+     * fechamento ficou preso em `awaiting_invoice` esperando uma NF que nunca
+     * viria - contando como devido para sempre.
+     *
+     * Aceita qualquer status pendente e leva a `paid` percorrendo exatamente o
+     * mesmo caminho de `confirm_payment()` (comissões, ajustes, stats, hook),
+     * que é o que evita saldo fantasma.
+     *
+     * Comprovante é OPCIONAL aqui de propósito: pagamento feito por fora
+     * frequentemente não tem PDF, e exigir arquivo é o que faria a pessoa
+     * desistir e deixar o registro sujo.
+     *
+     * @since 1.8.0
+     *
+     * @param int   $closing_id
+     * @param array $args {
+     *     @type string $method      Um de self::SETTLEMENT_METHODS (obrigatório).
+     *     @type string $date        Data real do pagamento, Y-m-d (obrigatório, pode ser retroativa).
+     *     @type string $reason      Motivo/justificativa (obrigatório).
+     *     @type array  $proof_file  $_FILES['...'] (opcional).
+     *     @type int    $user_id     Quem registrou (default: usuário atual).
+     * }
+     * @return true|WP_Error
+     */
+    public static function manual_settle($closing_id, $args = []) {
+        global $wpdb;
+
+        if (!current_user_can('lrp_manage_payments')) {
+            return new WP_Error('unauthorized', __('Permissão negada. Apenas o financeiro pode registrar pagamento externo.', 'lab-resumos-parceiros'));
+        }
+
+        $closing_id = (int) $closing_id;
+        $closing    = self::get($closing_id);
+
+        if (!$closing) {
+            return new WP_Error('not_found', __('Fechamento não encontrado.', 'lab-resumos-parceiros'));
+        }
+
+        if ($closing->status === 'paid') {
+            return new WP_Error('already_paid', __('Este fechamento já está pago.', 'lab-resumos-parceiros'));
+        }
+
+        if (!in_array($closing->status, self::PENDING_STATUSES, true)) {
+            return new WP_Error('invalid_status', sprintf(
+                /* translators: %s: status atual do fechamento */
+                __('Não é possível dar baixa manual em um fechamento com status "%s".', 'lab-resumos-parceiros'),
+                $closing->status
+            ));
+        }
+
+        $method = sanitize_key($args['method'] ?? '');
+        if (!isset(self::SETTLEMENT_METHODS[$method])) {
+            return new WP_Error('invalid_method', __('Selecione como o pagamento foi feito.', 'lab-resumos-parceiros'));
+        }
+
+        $reason = trim(sanitize_textarea_field($args['reason'] ?? ''));
+        if ($reason === '') {
+            return new WP_Error('missing_reason', __('O motivo da baixa manual é obrigatório.', 'lab-resumos-parceiros'));
+        }
+
+        $date_raw = trim((string) ($args['date'] ?? ''));
+        if ($date_raw === '') {
+            return new WP_Error('missing_date', __('Informe a data real do pagamento.', 'lab-resumos-parceiros'));
+        }
+
+        $date_ts = strtotime($date_raw);
+        if (!$date_ts) {
+            return new WP_Error('invalid_date', __('Data de pagamento inválida.', 'lab-resumos-parceiros'));
+        }
+
+        // Data futura não faz sentido para pagamento já realizado.
+        if ($date_ts > current_time('timestamp') + DAY_IN_SECONDS) {
+            return new WP_Error('future_date', __('A data do pagamento não pode ser no futuro.', 'lab-resumos-parceiros'));
+        }
+
+        $settlement_date = date('Y-m-d', $date_ts);
+        $user_id         = (int) ($args['user_id'] ?: get_current_user_id());
+
+        // Comprovante opcional: reaproveita a mesma pasta protegida do fluxo normal.
+        $proof_relative = null;
+        if (!empty($args['proof_file']) && !empty($args['proof_file']['tmp_name'])) {
+            $proof_relative = self::store_payment_proof($args['proof_file'], $closing_id);
+
+            if (is_wp_error($proof_relative)) {
+                return $proof_relative;
+            }
+        }
+
+        $final_amount = self::get_final_amount($closing);
+
+        $update = [
+            'status'             => 'paid',
+            'paid_at'            => $settlement_date . ' ' . date('H:i:s', current_time('timestamp')),
+            'paid_by'            => $user_id,
+            'payment_notes'      => $reason,
+            'settled_manually'   => 1,
+            'settlement_method'  => $method,
+            'settlement_reason'  => $reason,
+            'settlement_date'    => $settlement_date,
+            'settled_by'         => $user_id,
+            'settled_at'         => current_time('mysql'),
+        ];
+
+        if ($proof_relative) {
+            $update['payment_proof_file'] = $proof_relative;
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'lrp_closings',
+            $update,
+            ['id' => $closing_id]
+        );
+
+        if ($result === false) {
+            return new WP_Error('db_error', __('Erro ao registrar a baixa manual.', 'lab-resumos-parceiros'));
+        }
+
+        // Daqui para baixo é exatamente o que confirm_payment() faz.
+        $wpdb->update(
+            $wpdb->prefix . 'lrp_commissions',
+            ['status' => 'paid'],
+            ['closing_id' => $closing_id]
+        );
+
+        if (class_exists('LRP_Adjustment')) {
+            LRP_Adjustment::mark_as_paid($closing_id);
+        }
+
+        $affiliate = new LRP_Affiliate($closing->affiliate_id);
+        $affiliate->refresh_stats();
+
+        do_action('lrp_payment_completed', $affiliate, $closing_id);
+        do_action('lrp_closing_manually_settled', $closing_id, $affiliate, $method, $final_amount);
+
+        lrp_log('Baixa manual registrada', [
+            'closing_id'      => $closing_id,
+            'affiliate_id'    => $closing->affiliate_id,
+            'previous_status' => $closing->status,
+            'method'          => $method,
+            'settlement_date' => $settlement_date,
+            'amount'          => $final_amount,
+            'reason'          => $reason,
+            'has_proof'       => (bool) $proof_relative,
+            'by'              => $user_id,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Salva comprovante de pagamento na pasta protegida.
+     *
+     * @since 1.8.0
+     * @param array $file $_FILES entry
+     * @param int   $closing_id
+     * @return string|WP_Error Caminho relativo ao uploads basedir.
+     */
+    private static function store_payment_proof($file, $closing_id) {
+        $allowed_types = ['application/pdf', 'image/jpeg', 'image/png'];
+
+        if (!in_array($file['type'] ?? '', $allowed_types, true)) {
+            return new WP_Error('invalid_file', __('Tipo de arquivo não permitido. Envie PDF, JPG ou PNG.', 'lab-resumos-parceiros'));
+        }
+
+        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            return new WP_Error('file_too_large', __('Arquivo muito grande. Máximo: 5MB.', 'lab-resumos-parceiros'));
+        }
+
+        $upload_dir = wp_upload_dir();
+        $target_dir = $upload_dir['basedir'] . '/lrp-payments/' . date('Y/m');
+
+        if (!file_exists($target_dir)) {
+            wp_mkdir_p($target_dir);
+            file_put_contents($target_dir . '/.htaccess', 'deny from all');
+        }
+
+        $ext         = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $filename    = sanitize_file_name(sprintf('baixa-manual-%d-%s.%s', $closing_id, wp_generate_password(8, false), $ext));
+        $target_path = wp_normalize_path($target_dir . '/' . $filename);
+
+        if (!move_uploaded_file($file['tmp_name'], $target_path)) {
+            return new WP_Error('upload_failed', __('Erro ao fazer upload do comprovante.', 'lab-resumos-parceiros'));
+        }
+
+        return str_replace($upload_dir['basedir'], '', $target_path);
+    }
+
+    /**
+     * Fonte de verdade única de "tudo o que é devido" (conciliação).
+     *
+     * Devolve TODO fechamento em qualquer status pendente, com comissões +
+     * ajustes já consolidados e dias parado. Tela, CSV e cards leem daqui.
+     *
+     * @since 1.8.0
+     *
+     * @param array $filters {
+     *     @type int    $affiliate_id  Filtra por parceiro.
+     *     @type string $status        Filtra por um status pendente específico.
+     *     @type string $billing_type  'pj' ou 'rpa'.
+     *     @type string $period_from   'YYYY-MM'.
+     *     @type string $period_to     'YYYY-MM'.
+     * }
+     * @return array Lista de objetos com final_amount, adjustments_sum, days_pending.
+     */
+    public static function get_receivables($filters = []) {
+        global $wpdb;
+
+        $statuses = self::pending_statuses_sql();
+        $where    = ["c.status IN ($statuses)"];
+        $params   = [];
+
+        if (!empty($filters['affiliate_id'])) {
+            $where[]  = 'c.affiliate_id = %d';
+            $params[] = (int) $filters['affiliate_id'];
+        }
+
+        if (!empty($filters['status']) && in_array($filters['status'], self::PENDING_STATUSES, true)) {
+            $where[]  = 'c.status = %s';
+            $params[] = $filters['status'];
+        }
+
+        if (!empty($filters['billing_type']) && in_array($filters['billing_type'], ['pj', 'rpa'], true)) {
+            $where[]  = 'a.billing_type = %s';
+            $params[] = $filters['billing_type'];
+        }
+
+        // Período no formato YYYY-MM, comparado como ano*100+mês.
+        if (!empty($filters['period_from']) && preg_match('/^(\d{4})-(\d{2})$/', $filters['period_from'], $m)) {
+            $where[]  = '(c.period_year * 100 + c.period_month) >= %d';
+            $params[] = (int) $m[1] * 100 + (int) $m[2];
+        }
+
+        if (!empty($filters['period_to']) && preg_match('/^(\d{4})-(\d{2})$/', $filters['period_to'], $m)) {
+            $where[]  = '(c.period_year * 100 + c.period_month) <= %d';
+            $params[] = (int) $m[1] * 100 + (int) $m[2];
+        }
+
+        $sql = "SELECT c.*,
+                       a.billing_type,
+                       a.holder_name,
+                       a.holder_document,
+                       a.user_id,
+                       u.display_name AS affiliate_name,
+                       u.user_email AS affiliate_email
+                FROM {$wpdb->prefix}lrp_closings c
+                JOIN {$wpdb->prefix}lrp_affiliates a ON c.affiliate_id = a.id
+                JOIN {$wpdb->users} u ON a.user_id = u.ID
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY c.period_year ASC, c.period_month ASC, u.display_name ASC";
+
+        $rows = empty($params)
+            ? $wpdb->get_results($sql)
+            : $wpdb->get_results($wpdb->prepare($sql, ...$params));
+
+        $now = current_time('timestamp');
+
+        foreach ($rows as $row) {
+            $adjustments_sum = 0.0;
+            if (class_exists('LRP_Adjustment')) {
+                $adjustments_sum = LRP_Adjustment::get_closing_sum($row->id);
+            }
+
+            $row->adjustments_sum = $adjustments_sum + (float) ($row->adjustment_amount ?? 0);
+            $row->final_amount    = self::get_final_amount($row);
+
+            $reference = $row->closed_at ?: $row->created_at;
+            $row->days_pending = $reference
+                ? max(0, (int) floor(($now - strtotime($reference)) / DAY_IN_SECONDS))
+                : 0;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Totais de conciliação por status + total geral.
+     *
+     * Calculado a partir de get_receivables() para garantir que o card do topo
+     * e a tabela nunca divirjam.
+     *
+     * @since 1.8.0
+     * @param array $filters Mesmos filtros de get_receivables().
+     * @return array
+     */
+    public static function get_receivables_totals($filters = []) {
+        $rows = self::get_receivables($filters);
+
+        $totals = [
+            'count'       => 0,
+            'total'       => 0.0,
+            'by_status'   => [],
+        ];
+
+        foreach (self::PENDING_STATUSES as $status) {
+            $totals['by_status'][$status] = ['count' => 0, 'amount' => 0.0];
+        }
+
+        foreach ($rows as $row) {
+            $totals['count']++;
+            $totals['total'] += (float) $row->final_amount;
+
+            if (!isset($totals['by_status'][$row->status])) {
+                $totals['by_status'][$row->status] = ['count' => 0, 'amount' => 0.0];
+            }
+
+            $totals['by_status'][$row->status]['count']++;
+            $totals['by_status'][$row->status]['amount'] += (float) $row->final_amount;
+        }
+
+        return $totals;
+    }
+
+    /**
+     * Rótulo legível de status de fechamento (usado em tela e CSV).
+     *
+     * @since 1.8.0
+     * @param string $status
+     * @return string
+     */
+    public static function get_status_label($status) {
+        $labels = [
+            'open'             => __('Em andamento', 'lab-resumos-parceiros'),
+            'closed'           => __('Fechado (abaixo do mínimo)', 'lab-resumos-parceiros'),
+            'awaiting_invoice' => __('Aguardando NF do parceiro', 'lab-resumos-parceiros'),
+            'awaiting_rpa'     => __('Aguardando emissão de RPA', 'lab-resumos-parceiros'),
+            'invoice_received' => __('NF em análise', 'lab-resumos-parceiros'),
+            'rejected'         => __('NF rejeitada (reenvio pendente)', 'lab-resumos-parceiros'),
+            'approved'         => __('Aprovado - a pagar', 'lab-resumos-parceiros'),
+            'paid'             => __('Pago', 'lab-resumos-parceiros'),
+        ];
+
+        return $labels[$status] ?? $status;
     }
 
     /**

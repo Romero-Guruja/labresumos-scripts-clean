@@ -131,6 +131,8 @@ class LRP_Loader {
         $this->add_action('wp_enqueue_scripts', $public, 'enqueue_styles');
         $this->add_action('wp_enqueue_scripts', $public, 'enqueue_scripts');
         $this->add_action('init', $public, 'register_shortcodes');
+        // Exportação de todos os links de afiliado em .txt (pedido do usuário 2026-09-05)
+        $this->add_action('init', $public, 'maybe_export_links', 20);
         
         // Inicializa componentes
         LRP_Cookie_Tracker::instance();

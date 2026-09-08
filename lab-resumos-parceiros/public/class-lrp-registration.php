@@ -420,21 +420,16 @@ class LRP_Registration {
         
         $user_id = get_current_user_id();
         
-        // Se não está logado, cria conta WordPress primeiro
-        if (!$user_id) {
-            $user_id = $this->create_wordpress_account();
-            
-            if (is_wp_error($user_id)) {
-                $this->messages[] = ['type' => 'error', 'text' => $user_id->get_error_message()];
-                return;
-            }
-        }
-        
-        // Verifica se já é afiliado
-        if (LRP_Affiliate::get_by_user_id($user_id)) {
+        // Verifica se já é afiliado (apenas relevante se já está logado)
+        if ($user_id && LRP_Affiliate::get_by_user_id($user_id)) {
             $this->messages[] = ['type' => 'error', 'text' => __('Você já é um parceiro!', 'lab-resumos-parceiros')];
             return;
         }
+        
+        // IMPORTANTE: todas as validações de dados do formulário abaixo acontecem
+        // ANTES de criar a conta WordPress (quando aplicável). Isso evita criar
+        // uma conta "órfã" (sem registro de afiliado) quando o restante do
+        // formulário está incompleto ou inválido.
         
         // Obtém tipo de faturamento (escolha obrigatória, sem padrão silencioso)
         $billing_type = sanitize_key($_POST['billing_type'] ?? '');
@@ -466,8 +461,9 @@ class LRP_Registration {
         }
         
         // Inicializa dados do afiliado
+        // Nota: 'user_id' é definido logo antes de LRP_Affiliate::create(),
+        // após todas as validações (PIX, cupom, patrocinador etc.) terem passado.
         $data = [
-            'user_id'           => $user_id,
             'status'            => LRP_Settings::instance()->is_auto_approve() ? 'active' : 'pending',
             'billing_type'      => $billing_type,
             'first_name'        => $first_name,
@@ -597,6 +593,19 @@ class LRP_Registration {
                 $data['level'] = $sponsor->get_level() + 1;
             }
         }
+        
+        // Todas as validações passaram. Só agora cria a conta WordPress
+        // (se ainda não estiver logado), evitando contas "órfãs" sem afiliado.
+        if (!$user_id) {
+            $user_id = $this->create_wordpress_account();
+            
+            if (is_wp_error($user_id)) {
+                $this->messages[] = ['type' => 'error', 'text' => $user_id->get_error_message()];
+                return;
+            }
+        }
+        
+        $data['user_id'] = $user_id;
         
         // Cria afiliado
         $affiliate = LRP_Affiliate::create($data);

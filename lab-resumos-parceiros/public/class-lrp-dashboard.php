@@ -450,7 +450,7 @@ class LRP_Dashboard {
                             <div class="lrp-example-box-title">📊 <?php _e('Exemplo prático', 'lab-resumos-parceiros'); ?></div>
                             <div class="lrp-example-content">
                                 <?php 
-                                $price = 97;
+                                $price = 597;
                                 $discount = $this->affiliate->get_customer_discount();
                                 $commission_rate = $this->affiliate->get_commission_rate('coupon');
                                 $price_with_discount = $price * (1 - $discount/100);
@@ -519,25 +519,64 @@ class LRP_Dashboard {
      */
     private function render_tab_products() {
         // Busca produtos WooCommerce
-        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        // BUG CORRIGIDO (2026-09-05): quando o link "Próxima" aponta para "?...&paged=2",
+        // o WordPress redireciona (301) para a URL canônica com paginação bonita
+        // ("/meu-painel-parceiro/page/2/?tab=products"). Nessa URL o número da página NÃO
+        // vem mais em $_GET['paged'] (fica só disponível via get_query_var('paged')/'page'),
+        // então o código antigo, que só olhava $_GET['paged'], sempre caía no valor padrão 1
+        // depois do redirect - por isso a navegação "não avançava" e voltava sempre para os
+        // mesmos produtos da página 1, mesmo com a URL mostrando /page/2/, /page/3/ etc.
+        $paged = 1;
+        if (isset($_GET['paged'])) {
+            $paged = (int) $_GET['paged'];
+        } elseif (get_query_var('paged')) {
+            $paged = (int) get_query_var('paged');
+        } elseif (get_query_var('page')) {
+            $paged = (int) get_query_var('page');
+        }
+        $paged = max(1, $paged);
         $per_page = 12;
-        $search = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
+        $search = isset($_GET["lrp_s"]) ? sanitize_text_field($_GET["lrp_s"]) : '';
         $category = isset($_GET['cat']) ? (int) $_GET['cat'] : 0;
         $orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : 'title';
         $order = isset($_GET['order']) ? strtoupper(sanitize_key($_GET['order'])) : 'ASC';
         
         // Monta query
+        // IMPORTANTE: sempre incluir um critério de desempate estável (ID) além do campo
+        // escolhido pelo usuário. Sem isso, quando duas ou mais linhas empatam no campo de
+        // ordenação (ex.: vários produtos com o mesmo preço, ou 'popularity' não suportado
+        // nativamente pelo WP_Query fora do contexto de loja), o MySQL pode devolver a
+        // mesma linha em páginas diferentes (ou pular linhas) porque a ordem entre empates
+        // não é garantida - o efeito prático relatado pelo usuário é a paginação "não avançar"
+        // e ficar sempre voltando para os mesmos produtos.
+        $normalized_order = in_array($order, ['ASC', 'DESC']) ? $order : 'ASC';
+        
         $args = [
             'post_type'      => 'product',
             'post_status'    => 'publish',
             'posts_per_page' => $per_page,
             'paged'          => $paged,
-            'orderby'        => $orderby === 'price' ? 'meta_value_num' : $orderby,
-            'order'          => in_array($order, ['ASC', 'DESC']) ? $order : 'ASC',
+            'no_found_rows'  => false,
         ];
         
-        if ($orderby === 'price') {
-            $args['meta_key'] = '_price';
+        switch ($orderby) {
+            case 'price':
+                $args['meta_key'] = '_price';
+                $args['orderby'] = ['meta_value_num' => $normalized_order, 'ID' => 'ASC'];
+                break;
+            case 'popularity':
+                // 'popularity' não é um valor nativo de orderby do WP_Query - precisa mapear
+                // explicitamente para o meta usado pelo WooCommerce (total_sales), senão o
+                // WordPress ignora o campo e a consulta fica sem ORDER BY determinístico.
+                $args['meta_key'] = 'total_sales';
+                $args['orderby'] = ['meta_value_num' => $normalized_order, 'ID' => 'ASC'];
+                break;
+            case 'date':
+                $args['orderby'] = ['date' => $normalized_order, 'ID' => 'ASC'];
+                break;
+            default:
+                $args['orderby'] = ['title' => $normalized_order, 'ID' => 'ASC'];
+                break;
         }
         
         if ($search) {
@@ -597,7 +636,7 @@ class LRP_Dashboard {
                         
                         <div class="lrp-filter-group">
                             <label for="lrp-search"><?php _e('Buscar:', 'lab-resumos-parceiros'); ?></label>
-                            <input type="text" name="s" id="lrp-search" value="<?php echo esc_attr($search); ?>" 
+                            <input type="text" name="lrp_s" id="lrp-search" value="<?php echo esc_attr($search); ?>" 
                                    placeholder="<?php esc_attr_e('Nome do produto...', 'lab-resumos-parceiros'); ?>">
                         </div>
                         
@@ -652,6 +691,13 @@ class LRP_Dashboard {
                         _n('%s produto encontrado', '%s produtos encontrados', $total_products, 'lab-resumos-parceiros'),
                         '<strong>' . number_format_i18n($total_products) . '</strong>'
                     ); ?>
+                    <a href="<?php echo esc_url(add_query_arg(array_filter([
+                        'lrp_export_links' => 1,
+                        'lrp_export_nonce' => wp_create_nonce('lrp_export_links_' . $this->affiliate->get_id()),
+                        'preview_as'       => $preview_affiliate_id ?: null,
+                    ]), get_permalink())); ?>" class="lrp-btn lrp-btn-sm lrp-btn-secondary lrp-export-links-btn">
+                        📄 <?php _e('Exportar todos os links (.txt)', 'lab-resumos-parceiros'); ?>
+                    </a>
                 </div>
                 
                 <?php if (empty($products)): ?>
@@ -661,8 +707,8 @@ class LRP_Dashboard {
                         <div class="lrp-empty-text"><?php _e('Tente ajustar os filtros de busca.', 'lab-resumos-parceiros'); ?></div>
                     </div>
                 <?php else: ?>
-                    <!-- Grid de produtos -->
-                    <div class="lrp-products-grid">
+                    <!-- Lista de produtos (era grid de cards - trocado para lista por pedido do usuário: "fica melhor para visualizar") -->
+                    <div class="lrp-products-list">
                         <?php foreach ($products as $post): 
                             $product = wc_get_product($post->ID);
                             if (!$product) continue;
@@ -674,12 +720,12 @@ class LRP_Dashboard {
                             $price = $product->get_price();
                             $commission = $price * ($link_rate / 100);
                         ?>
-                        <div class="lrp-product-card">
-                            <div class="lrp-product-image">
+                        <div class="lrp-product-row">
+                            <div class="lrp-product-row-image">
                                 <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($product->get_name()); ?>">
                             </div>
                             
-                            <div class="lrp-product-info">
+                            <div class="lrp-product-row-info">
                                 <h4 class="lrp-product-title"><?php echo esc_html($product->get_name()); ?></h4>
                                 
                                 <div class="lrp-product-prices">
@@ -692,7 +738,11 @@ class LRP_Dashboard {
                                 </div>
                             </div>
                             
-                            <div class="lrp-product-actions">
+                            <div class="lrp-product-row-link">
+                                <input type="text" readonly value="<?php echo esc_url($ref_url); ?>" class="lrp-product-link-input" onclick="this.select();">
+                            </div>
+                            
+                            <div class="lrp-product-row-actions">
                                 <button type="button" class="lrp-btn lrp-btn-primary lrp-btn-copy-link" 
                                         data-link="<?php echo esc_url($ref_url); ?>"
                                         title="<?php esc_attr_e('Copiar link de afiliado', 'lab-resumos-parceiros'); ?>">
@@ -713,7 +763,7 @@ class LRP_Dashboard {
                         <?php
                         $pagination_args = [
                             'tab'     => 'products',
-                            's'       => $search,
+                            'lrp_s' => $search,
                             'cat'     => $category,
                             'orderby' => $orderby,
                             'order'   => $order,
@@ -785,7 +835,16 @@ class LRP_Dashboard {
      * Aba: Vendas
      */
     private function render_tab_sales() {
-        $page = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        // Mesmo ajuste de leitura de paged que em render_tab_products() (ver comentário lá).
+        $page = 1;
+        if (isset($_GET['paged'])) {
+            $page = (int) $_GET['paged'];
+        } elseif (get_query_var('paged')) {
+            $page = (int) get_query_var('paged');
+        } elseif (get_query_var('page')) {
+            $page = (int) get_query_var('page');
+        }
+        $page = max(1, $page);
         $per_page = 20;
         
         $sales = LRP_Referral::get_by_affiliate($this->affiliate->get_id(), [

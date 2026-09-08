@@ -193,6 +193,12 @@ class LRP_Activator {
             rejection_reason TEXT DEFAULT NULL,
             rejected_at DATETIME DEFAULT NULL,
             rejected_by BIGINT(20) UNSIGNED DEFAULT NULL,
+            settled_manually TINYINT(1) DEFAULT 0,
+            settlement_method VARCHAR(30) DEFAULT NULL,
+            settlement_reason TEXT DEFAULT NULL,
+            settlement_date DATE DEFAULT NULL,
+            settled_by BIGINT(20) UNSIGNED DEFAULT NULL,
+            settled_at DATETIME DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             closed_at DATETIME DEFAULT NULL,
@@ -201,7 +207,8 @@ class LRP_Activator {
             KEY status (status),
             KEY period_lookup (period_year, period_month),
             KEY affiliate_status (affiliate_id, status),
-            KEY deferred (deferred)
+            KEY deferred (deferred),
+            KEY settled_manually (settled_manually)
         ) $charset_collate;";
         dbDelta($sql);
         
