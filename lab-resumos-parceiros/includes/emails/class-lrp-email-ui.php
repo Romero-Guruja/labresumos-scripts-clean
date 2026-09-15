@@ -7,17 +7,27 @@
  * estes helpers, em vez de repetir `<table>` e estilo inline.
  *
  * REGRAS DE E-MAIL HTML aplicadas em todos os componentes (mesma técnica
- * usada nos e-mails de rollout do Arena, validados em Gmail/Outlook/Apple):
+ * dos e-mails de rollout do Arena, validados em Gmail dark com 2.321 envios):
  *
  * 1. Layout em `<table role="presentation">`, nunca flex/grid.
  * 2. Todo estilo inline, nada de `<style>` ou classe.
  * 3. Cor de fundo sempre em TRÊS lugares: atributo `bgcolor`,
  *    `background-color` e `background-image:linear-gradient(cor,cor)`.
- *    O gradiente é o que impede o dark mode do Gmail/Outlook de inverter.
- * 4. Cor de texto travada com `color:transparent` + `background-image` +
- *    `background-clip:text` (mesmo motivo). Fallback: clientes que não
- *    suportam `background-clip` caem no `color` declarado antes.
- * 5. Largura fixa 600px com `max-width:100%` para caber no mobile.
+ *    O gradiente é o que impede o cliente de repintar o fundo.
+ * 4. **A PALETA É DARK POR DECISÃO, NÃO POR ESTÉTICA.** Foi a correção de um
+ *    bug real: com fundo claro, o Gmail iOS em dark mode inverteu o TEXTO
+ *    (navy -> azul claro) mas NÃO conseguiu inverter o fundo (travado pelo
+ *    gradiente do item 3) - resultado: texto claro sobre fundo claro,
+ *    ilegível. Num design já escuro o cliente não tem o que inverter, que é
+ *    exatamente por que o e-mail do Arena (`#0B0D12`) nunca teve o problema.
+ *    NÃO converter esta paleta para fundo claro.
+ * 5. Cor de texto é `color:#hex` simples. NÃO usar `color:transparent` +
+ *    `background-clip:text`: em cliente que suporta `transparent` mas ignora
+ *    `background-clip`, o texto fica invisível (reproduzido em renderização).
+ * 6. Largura fixa 600px com `max-width:100%` para caber no mobile.
+ *
+ * A identidade continua sendo a da Lab: o site já é navy + creme + amarelo
+ * (ver `labresumos-child`), então o e-mail escuro é a marca, não um desvio.
  *
  * @package Lab_Resumos_Parceiros
  */
@@ -31,17 +41,35 @@ if (!defined('ABSPATH')) {
  */
 class LRP_Email_UI {
 
-    /** Paleta Lab Resumos (espelha o site e o child theme labresumos-child). */
-    const NAVY        = '#262D38'; // fundo institucional
-    const NAVY_SOFT   = '#333B49'; // texto principal
-    const CREAM       = '#F3F1E8'; // papel
-    const CREAM_LIGHT = '#FCFBF6'; // cartão
+    /**
+     * Paleta Lab Resumos em modo escuro (o site já é navy + creme + amarelo).
+     * Os nomes NAVY/CREAM seguem a marca; o papel de cada um no e-mail está
+     * no comentário. Ver item 4 do cabeçalho antes de clarear qualquer fundo.
+     */
+    const SHELL       = '#12161D'; // fundo externo da mensagem
+    const NAVY        = '#1E242F'; // cartão principal
+    const SURFACE     = '#2A3240'; // blocos elevados (detalhes, avisos)
+    const CREAM       = '#F3F1E8'; // texto principal (papel da marca)
+    /**
+     * Texto de maior ênfase. É off-white COM MATIZ, nunca `#FFFFFF`.
+     *
+     * Terceira armadilha do Gmail iOS em dark mode, observada em teste real:
+     * ele inverte cores NEUTRAS EXTREMAS (`#FFFFFF`, `#000000`) e preserva
+     * qualquer cor com matiz. Com `#FFFFFF` os títulos, os valores em reais e
+     * os `strong` ficaram escuros sobre fundo escuro - sumiram - enquanto o
+     * creme `#F3F1E8` ao lado, no mesmo parágrafo, apareceu normal.
+     * Mantenha o mesmo perfil de matiz do CREAM (R > G > B, spread ~10).
+     */
+    const CREAM_LIGHT = '#FAF8F0';
     const GOLD        = '#F1CC00'; // dinheiro, CTA principal
-    const GOLD_DARK   = '#B9861A';
-    const BLUE        = '#0475CF'; // informação, CTA secundário
-    const RED         = '#B8231E'; // atenção
-    const MUTED       = '#69727D'; // texto de apoio
-    const LINE        = '#E4E1D6'; // divisórias
+    const GOLD_SOFT   = '#FFE066'; // amarelo legível como texto sobre escuro
+    const BLUE        = '#4BA3F0'; // informação, CTA secundário
+    const RED         = '#F4756B'; // atenção
+    const MUTED       = '#A3AAB8'; // texto de apoio
+    const LINE        = '#39414F'; // divisórias
+
+    /** Compatibilidade: navy claro usado como texto sobre superfícies claras. */
+    const NAVY_SOFT   = '#1E242F';
 
     const FONT = "'Outfit','Helvetica Neue',Helvetica,Arial,sans-serif";
 
@@ -54,35 +82,35 @@ class LRP_Email_UI {
     private static function tone($tone) {
         $map = [
             'gold' => [
-                'bg'     => '#FDF6D4',
-                'border' => '#EFD873',
-                'ink'    => '#5C4A00',
+                'bg'     => '#2E2A14',
+                'border' => '#5C5320',
+                'ink'    => self::GOLD_SOFT,
                 'accent' => self::GOLD,
             ],
             'blue' => [
-                'bg'     => '#E7F1FB',
-                'border' => '#B9D7F2',
-                'ink'    => '#0B4C85',
+                'bg'     => '#17293C',
+                'border' => '#2C4A66',
+                'ink'    => '#9CCBF5',
                 'accent' => self::BLUE,
             ],
             'navy' => [
-                'bg'     => self::NAVY,
-                'border' => '#3F4858',
+                'bg'     => self::SURFACE,
+                'border' => self::LINE,
                 'ink'    => self::CREAM,
                 'accent' => self::GOLD,
             ],
             'red' => [
-                'bg'     => '#FBEAE9',
-                'border' => '#F0C2C0',
-                'ink'    => '#7E1815',
+                'bg'     => '#33201F',
+                'border' => '#6B3733',
+                'ink'    => '#F6A6A0',
                 'accent' => self::RED,
             ],
         ];
 
         return isset($map[$tone]) ? $map[$tone] : [
-            'bg'     => '#F0EEE4',
+            'bg'     => self::SURFACE,
             'border' => self::LINE,
-            'ink'    => self::NAVY_SOFT,
+            'ink'    => self::MUTED,
             'accent' => self::MUTED,
         ];
     }
@@ -98,24 +126,144 @@ class LRP_Email_UI {
     }
 
     /**
-     * Cor de texto.
+     * Cor de texto blindada contra o dark mode do Gmail iOS - em DUAS camadas.
      *
-     * NÃO usar a técnica `color:transparent` + `background-clip:text` aqui,
-     * mesmo ela sendo comum em newsletters: num cliente que suporta
-     * `color:transparent` mas ignora `background-clip`, o texto fica
-     * literalmente INVISÍVEL. Foi reproduzido ao renderizar estes e-mails
-     * (WeasyPrint) e o mesmo vale para vários webmails.
+     * O QUE O GMAIL iOS FAZ (Rémi Parmentier, autor do Can I Email; reproduzido
+     * aqui em teste real): em dark mode ele reescreve `color` e
+     * `background-color` de TODO elemento - inverte claro em escuro. Não é
+     * heurística de "branco puro", como parecia: o off-white #FAF8F0 sumiu
+     * igual. A única coisa que ele NÃO reescreve é `background-image`.
+     * Por isso o e-mail do Arena sobreviveu a 2.321 envios: o texto era
+     * pintado por um `linear-gradient` recortado pelas letras.
      *
-     * A proteção real contra dark mode é o fundo travado em `bg()` (um
-     * gradiente não é invertido pelos clientes), somada às metas
-     * `color-scheme`/`supported-color-schemes` do envelope. Com o fundo
-     * preservado, a cor declarada aqui é mantida.
+     * A forma ingênua (`color:transparent` + `background-clip:text` inline)
+     * tem uma falha grave, reproduzida em renderização: cliente sem
+     * `background-clip` mostra NADA (Outlook clássico, Yahoo, GANGA, vários
+     * webmails). Então separamos em duas camadas com destino conhecido:
+     *
+     *   CAMADA 1 (inline, aqui):  `color:#hex` sólido + classe `lr-ink-<hex>`.
+     *      Todo cliente enxerga a cor. É o fallback universal.
+     *
+     *   CAMADA 2 (<style> no envelope, ver LRP_Email_Manager::wrap_html):
+     *      `u + .body .lr-ink-<hex> { color:transparent;
+     *       background-image:linear-gradient(hex,hex);
+     *       -webkit-background-clip:text; background-clip:text }`
+     *      O seletor `u + .body` só casa no Gmail (ele troca o doctype por
+     *      `<u></u>`, howtotarget.email). E o Gmail suporta `<style>` +
+     *      `background-clip` (Can I Email). Ali a tinta vira gradiente, que o
+     *      dark mode não toca. Onde `<style>` não existe (GANGA, Outlook
+     *      Windows) a regra nem chega: fica a camada 1, nunca texto vazio.
+     *
+     *      POR QUE `!important` EM TUDO: a camada 1 é INLINE, e estilo inline
+     *      vence qualquer regra de <style> sem `!important` - regra básica de
+     *      cascata. Sem ele o `color:transparent` da camada 2 nunca aplicou:
+     *      a cor inline (invertida pelo Gmail para escuro) venceu, o gradiente
+     *      aplicou sozinho e o texto virou miolo escuro com halo claro. Foi o
+     *      quarto teste em produção que revelou isso (set/2026). A referência
+     *      pública que fez esta técnica funcionar no Gmail iOS usa exatamente
+     *      `color: transparent!important` (stackoverflow 71914548).
+     *
+     *      POR QUE `color:transparent` E NÃO `-webkit-text-fill-color`:
+     *      testado em produção (set/2026). Com text-fill-color o Gmail iOS
+     *      DESCARTOU a propriedade (não consta no Can I Email), inverteu a
+     *      `color` sólida para escuro e o gradiente claro ficou só como um
+     *      halo em volta das letras. `color:transparent` o Gmail preserva -
+     *      é exatamente o que o e-mail do Arena usava. E, como esta regra só
+     *      roda no Gmail, o risco de "transparente sem tinta" não existe aqui.
+     *      POR QUE `background-image` LONGHAND E NÃO O SHORTHAND: é a forma
+     *      que Rémi Parmentier documenta como intocada pelo dark mode e a que
+     *      o Arena usou. Não arriscar o shorthand.
+     *
+     * As classes usadas são coletadas em self::$inks para o envelope emitir
+     * só as regras necessárias.
      *
      * @param string $hex
-     * @return string trecho de CSS inline
+     * @return string trecho de CSS inline (a classe vem por ink_class())
      */
     public static function ink($hex) {
+        self::$inks[strtoupper($hex)] = true;
         return 'color:' . $hex . ';';
+    }
+
+    /** Cores de texto usadas na mensagem atual (para o <style> do envelope). */
+    public static $inks = [];
+
+    /**
+     * Nome da classe que a camada 2 usa para uma cor.
+     *
+     * @param string $hex
+     * @return string
+     */
+    public static function ink_class($hex) {
+        return 'lr-ink-' . strtolower(ltrim($hex, '#'));
+    }
+
+    /**
+     * Atributos completos (class + style) para um elemento de texto.
+     * Uso: '<div ' . LRP_Email_UI::text($hex, 'font-size:16px;') . '>'
+     *
+     * @param string $hex
+     * @param string $extra_style
+     * @return string
+     */
+    public static function text($hex, $extra_style = '') {
+        return 'class="' . self::ink_class($hex) . '" style="' . $extra_style . ' ' . self::ink($hex) . '"';
+    }
+
+    /**
+     * Bloco <style> da camada 2, para o envelope. Uma regra por cor usada.
+     *
+     * @return string
+     */
+    public static function gmail_ink_styles() {
+        if (empty(self::$inks)) {
+            return '';
+        }
+        $rules = '';
+        foreach (array_keys(self::$inks) as $hex) {
+            $rules .= 'u + .body .' . self::ink_class($hex)
+                . '{color:transparent!important;'
+                . 'background-image:linear-gradient(' . $hex . ',' . $hex . ')!important;'
+                . '-webkit-background-clip:text!important;background-clip:text!important;}' . "\n";
+        }
+        return "<style>\n" . $rules . "</style>";
+    }
+
+    /**
+     * Aplica a camada 1 em um HTML já montado: toda tag cujo `style` declara
+     * `color:#hex` ganha a classe `lr-ink-<hex>` correspondente (e a cor é
+     * registrada em self::$inks). Roda uma vez no envelope, sobre o corpo
+     * inteiro, para os templates não precisarem se preocupar com classe.
+     *
+     * Ignora `background-color:` (lookbehind) e tags que já têm `class=`.
+     *
+     * @param string $html
+     * @return string
+     */
+    public static function bind_ink_classes($html) {
+        return preg_replace_callback(
+            '/<([a-z][a-z0-9]*)((?:\s+[a-z-]+="[^"]*")*)\s*>/i',
+            function ($m) {
+                $tag   = $m[1];
+                $attrs = $m[2];
+
+                if (stripos($attrs, 'class=') !== false) {
+                    return $m[0];
+                }
+                if (!preg_match('/style="([^"]*)"/i', $attrs, $sm)) {
+                    return $m[0];
+                }
+                if (!preg_match('/(?<![\w-])color:\s*(#[0-9a-f]{6})/i', $sm[1], $cm)) {
+                    return $m[0];
+                }
+
+                $hex = $cm[1];
+                self::$inks[strtoupper($hex)] = true;
+
+                return '<' . $tag . ' class="' . self::ink_class($hex) . '"' . $attrs . '>';
+            },
+            $html
+        );
     }
 
     /**
@@ -152,7 +300,7 @@ class LRP_Email_UI {
         }
 
         if ($a['title'] !== '') {
-            $out .= '<div style="font-family:' . self::FONT . '; font-size:26px; font-weight:bold; line-height:1.25; letter-spacing:-0.02em; text-align:center; margin:0 0 10px; ' . self::ink(self::NAVY) . '">'
+            $out .= '<div style="font-family:' . self::FONT . '; font-size:26px; font-weight:bold; line-height:1.25; letter-spacing:-0.02em; text-align:center; margin:0 0 10px; ' . self::ink(self::CREAM_LIGHT) . '">'
                 . $a['title'] . '</div>';
         }
 
@@ -172,7 +320,7 @@ class LRP_Email_UI {
      * @return string
      */
     public static function p($html, $args = []) {
-        $a = array_merge(['align' => 'left', 'size' => 16, 'color' => self::NAVY_SOFT], $args);
+        $a = array_merge(['align' => 'left', 'size' => 16, 'color' => self::CREAM], $args);
 
         return '<p style="font-family:' . self::FONT . '; font-size:' . (int) $a['size'] . 'px; line-height:1.65; text-align:' . $a['align'] . '; margin:16px 0; ' . self::ink($a['color']) . '">' . $html . '</p>';
     }
@@ -184,7 +332,7 @@ class LRP_Email_UI {
      * @param string $color
      * @return string
      */
-    public static function strong($text, $color = self::NAVY) {
+    public static function strong($text, $color = self::CREAM_LIGHT) {
         return '<b style="' . self::ink($color) . '">' . $text . '</b>';
     }
 
@@ -195,7 +343,7 @@ class LRP_Email_UI {
      * @return string
      */
     public static function h3($text) {
-        return '<div style="font-family:' . self::FONT . '; font-size:18px; font-weight:bold; line-height:1.35; margin:30px 0 6px; ' . self::ink(self::NAVY) . '">' . $text . '</div>';
+        return '<div style="font-family:' . self::FONT . '; font-size:18px; font-weight:bold; line-height:1.35; margin:30px 0 6px; ' . self::ink(self::CREAM_LIGHT) . '">' . $text . '</div>';
     }
 
     /**
@@ -221,7 +369,7 @@ class LRP_Email_UI {
             $out .= '<div style="font-family:' . self::FONT . '; font-size:11px; font-weight:bold; letter-spacing:1.2px; text-transform:uppercase; text-align:center; margin:0 0 10px; ' . self::ink($t['ink']) . '">' . esc_html($a['label']) . '</div>';
         }
 
-        $out .= '<div style="font-family:' . self::FONT . '; font-size:38px; font-weight:bold; line-height:1.1; letter-spacing:-0.03em; text-align:center; margin:0; ' . self::ink(self::NAVY) . '">' . $a['value'] . '</div>';
+        $out .= '<div style="font-family:' . self::FONT . '; font-size:38px; font-weight:bold; line-height:1.1; letter-spacing:-0.03em; text-align:center; margin:0; ' . self::ink(self::CREAM_LIGHT) . '">' . $a['value'] . '</div>';
 
         if ($a['caption'] !== '') {
             $out .= '<div style="font-family:' . self::FONT . '; font-size:13px; line-height:1.5; text-align:center; margin:10px 0 0; ' . self::ink($t['ink']) . '">' . $a['caption'] . '</div>';
@@ -263,7 +411,7 @@ class LRP_Email_UI {
             $border    = $i === $last ? '' : 'border-bottom:1px solid ' . $t['border'] . ';';
             $size      = $is_strong ? 17 : 14;
             $weight    = $is_strong ? 'bold' : 'normal';
-            $value_ink = $is_strong ? self::ink(self::NAVY) : self::ink(self::NAVY_SOFT);
+            $value_ink = $is_strong ? self::ink(self::CREAM_LIGHT) : self::ink(self::CREAM);
 
             $out .= '<tr>'
                 . '<td align="left" valign="middle" style="' . $border . ' text-align:left; padding:13px 10px 13px 0; font-family:' . self::FONT . '; font-size:' . $size . 'px; font-weight:' . $weight . '; ' . self::ink(self::MUTED) . '">' . esc_html($row['label']) . '</td>'
@@ -286,7 +434,7 @@ class LRP_Email_UI {
         $a    = array_merge(['tone' => 'gold'], $args);
         $gold = $a['tone'] === 'gold';
         $bg   = $gold ? self::GOLD : self::BLUE;
-        $fg   = $gold ? self::NAVY : self::CREAM;
+        $fg   = $gold ? '#1E242F' : '#0B1B2B';
 
         return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:30px auto 8px;"><tr>'
             . '<td align="center" bgcolor="' . $bg . '" style="text-align:center; border-radius:16px; ' . self::bg($bg) . '">'
@@ -330,9 +478,9 @@ class LRP_Email_UI {
                 . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;"><tr>'
                 . '<td width="34" valign="top" style="width:34px; padding:2px 0 0;">'
                 . '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>'
-                . '<td width="26" height="26" align="center" valign="middle" bgcolor="' . self::GOLD . '" style="width:26px; height:26px; border-radius:13px; ' . self::bg(self::GOLD) . ' font-family:' . self::FONT . '; font-size:13px; font-weight:bold; line-height:26px; text-align:center; ' . self::ink(self::NAVY) . '">' . ($i + 1) . '</td>'
+                . '<td width="26" height="26" align="center" valign="middle" bgcolor="' . self::GOLD . '" style="width:26px; height:26px; border-radius:13px; ' . self::bg(self::GOLD) . ' font-family:' . self::FONT . '; font-size:13px; font-weight:bold; line-height:26px; text-align:center;"><span style="' . self::ink('#1E242F') . '">' . ($i + 1) . '</span></td>'
                 . '</tr></table></td>'
-                . '<td valign="top" style="font-family:' . self::FONT . '; font-size:15px; line-height:1.55; ' . self::ink(self::NAVY_SOFT) . '">'
+                . '<td valign="top" style="font-family:' . self::FONT . '; font-size:15px; line-height:1.55; ' . self::ink(self::CREAM) . '">'
                 . self::strong($title)
                 . ($text !== '' ? '<span style="' . self::ink(self::MUTED) . '"> - ' . $text . '</span>' : '')
                 . '</td></tr></table></td></tr>';
@@ -360,7 +508,7 @@ class LRP_Email_UI {
         }
 
         return $out
-            . '<td align="center" bgcolor="' . self::NAVY . '" style="text-align:center; border-radius:14px; padding:' . ($a['big'] ? '20px' : '14px') . ' 18px; ' . self::bg(self::NAVY) . '">'
+            . '<td align="center" bgcolor="' . self::SURFACE . '" style="text-align:center; border:1px solid ' . self::LINE . '; border-radius:14px; padding:' . ($a['big'] ? '20px' : '14px') . ' 18px; ' . self::bg(self::SURFACE) . '">'
             . '<span style="font-family:' . $font . '; font-size:' . $size . 'px; font-weight:bold; letter-spacing:' . ($a['big'] ? '2px' : '0') . '; text-align:center; word-break:break-all; ' . self::ink($a['big'] ? self::GOLD : self::CREAM) . '">' . esc_html($value) . '</span>'
             . '</td></tr></table>';
     }
@@ -383,7 +531,7 @@ class LRP_Email_UI {
      * @return string
      */
     public static function signoff($line = 'Boas vendas,') {
-        return '<p style="font-family:' . self::FONT . '; font-size:16px; line-height:1.6; margin:28px 0 0; ' . self::ink(self::NAVY_SOFT) . '">'
+        return '<p style="font-family:' . self::FONT . '; font-size:16px; line-height:1.6; margin:28px 0 0; ' . self::ink(self::CREAM) . '">'
             . esc_html($line) . '<br>'
             . self::strong('Equipe Lab Resumos')
             . '</p>';

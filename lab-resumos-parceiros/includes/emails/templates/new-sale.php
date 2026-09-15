@@ -42,7 +42,7 @@ echo LRP_Email_UI::details([
 ]);
 
 echo LRP_Email_UI::note(
-    'A comissão fica ' . LRP_Email_UI::strong('pendente', '#0B4C85') . ' até a confirmação do pagamento pelo cliente. Depois disso, é aprovada automaticamente e entra no seu próximo fechamento.',
+    'A comissão fica ' . LRP_Email_UI::strong('pendente', '#9CCBF5') . ' até a confirmação do pagamento pelo cliente. Depois disso, é aprovada automaticamente e entra no seu próximo fechamento.',
     ['tone' => 'blue', 'icon' => '&#8987;'] // ⏳
 );
 

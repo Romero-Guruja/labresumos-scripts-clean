@@ -60,7 +60,7 @@ if ($is_rpa) {
     ], ['title' => 'Dados que vamos usar no RPA', 'tone' => 'blue']);
 
     echo LRP_Email_UI::note(
-        LRP_Email_UI::strong('Confira os dados acima.', '#5C4A00') . ' Qualquer coisa errada atrasa o seu pagamento - corrija no perfil antes que a gente emita.',
+        LRP_Email_UI::strong('Confira os dados acima.', LRP_Email_UI::GOLD_SOFT) . ' Qualquer coisa errada atrasa o seu pagamento - corrija no perfil antes que a gente emita.',
         ['tone' => 'gold', 'icon' => '&#9888;'] // ⚠
     );
 

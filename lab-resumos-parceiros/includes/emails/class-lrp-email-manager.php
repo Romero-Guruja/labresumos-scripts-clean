@@ -663,8 +663,8 @@ class LRP_Email_Manager {
             'footer_note' => '',
         ], $args);
 
+        $shell  = LRP_Email_UI::SHELL;
         $navy   = LRP_Email_UI::NAVY;
-        $cream  = LRP_Email_UI::CREAM_LIGHT;
         $gold   = LRP_Email_UI::GOLD;
         $font   = LRP_Email_UI::FONT;
         $site   = home_url('/');
@@ -673,7 +673,7 @@ class LRP_Email_Manager {
         // some no corpo da mensagem.
         $preheader = '';
         if ($args['preheader'] !== '') {
-            $preheader = '<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:' . $cream . ';">'
+            $preheader = '<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; opacity:0;">'
                 . esc_html($args['preheader'])
                 . str_repeat('&#847;&zwnj;&nbsp;', 60)
                 . '</div>';
@@ -683,26 +683,27 @@ class LRP_Email_Manager {
             ? '<div style="font-family:' . $font . '; font-size:12px; line-height:1.6; text-align:center; margin:0 0 10px; ' . LRP_Email_UI::ink('#9AA2AF') . '">' . esc_html($args['footer_note']) . '</div>'
             : '';
 
-        return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        $html = '<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="x-apple-disable-message-reformatting" />
-<meta name="color-scheme" content="light dark" />
-<meta name="supported-color-schemes" content="light dark" />
+<meta name="color-scheme" content="dark" />
+<meta name="supported-color-schemes" content="dark" />
 <title>' . esc_html($subject) . '</title>
+<!--LRP_GMAIL_INK_STYLES-->
 </head>
-<body style="margin:0; padding:0; width:100%; ' . LRP_Email_UI::bg($navy) . '">
+<body class="body" style="margin:0; padding:0; width:100%; ' . LRP_Email_UI::bg($shell) . '">
 ' . $preheader . '
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $navy . '" style="' . LRP_Email_UI::bg($navy) . '">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $shell . '" style="' . LRP_Email_UI::bg($shell) . '">
 <tr>
-<td align="center" style="padding:28px 12px; ' . LRP_Email_UI::bg($navy) . '">
+<td align="center" style="padding:28px 12px; ' . LRP_Email_UI::bg($shell) . '">
 
-  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $cream . '" style="width:600px; max-width:100%; border-radius:22px; overflow:hidden; ' . LRP_Email_UI::bg($cream) . '">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $navy . '" style="width:600px; max-width:100%; border-radius:22px; overflow:hidden; ' . LRP_Email_UI::bg($navy) . '">
 
     <tr>
-      <td bgcolor="' . $navy . '" style="padding:26px 30px; ' . LRP_Email_UI::bg($navy) . '">
+      <td bgcolor="' . $shell . '" style="padding:26px 30px; border-bottom:1px solid ' . LRP_Email_UI::LINE . '; ' . LRP_Email_UI::bg($shell) . '">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="left" valign="middle">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -722,13 +723,13 @@ class LRP_Email_Manager {
     </tr>
 
     <tr>
-      <td bgcolor="' . $cream . '" style="padding:36px 30px 34px; ' . LRP_Email_UI::bg($cream) . '">
+      <td bgcolor="' . $navy . '" style="padding:36px 30px 34px; ' . LRP_Email_UI::bg($navy) . '">
 ' . $content . '
       </td>
     </tr>
 
     <tr>
-      <td align="center" bgcolor="' . $navy . '" style="padding:24px 30px; ' . LRP_Email_UI::bg($navy) . '">
+      <td align="center" bgcolor="' . $shell . '" style="padding:24px 30px; border-top:1px solid ' . LRP_Email_UI::LINE . '; ' . LRP_Email_UI::bg($shell) . '">
         ' . $footer_note . '
         <div style="font-family:' . $font . '; font-size:12px; line-height:1.6; text-align:center; margin:0 0 6px; ' . LRP_Email_UI::ink('#9AA2AF') . '">
           Dúvidas? É só responder este e-mail - uma pessoa de verdade vai ler.
@@ -747,6 +748,15 @@ class LRP_Email_Manager {
 </table>
 </body>
 </html>';
+
+        // Camada 1: toda tag com `color:#hex` inline ganha a classe lr-ink-<hex>.
+        // Camada 2: uma regra `u + .body .lr-ink-<hex>` por cor, só no Gmail.
+        // Ver LRP_Email_UI::ink() para o porquê.
+        $html = LRP_Email_UI::bind_ink_classes($html);
+        $html = str_replace('<!--LRP_GMAIL_INK_STYLES-->', LRP_Email_UI::gmail_ink_styles(), $html);
+        LRP_Email_UI::$inks = [];
+
+        return $html;
     }
 }
 

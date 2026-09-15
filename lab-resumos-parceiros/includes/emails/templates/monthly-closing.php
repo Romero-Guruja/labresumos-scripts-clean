@@ -70,7 +70,7 @@ if ($is_rpa) {
     ], ['title' => 'Dados cadastrados', 'tone' => 'blue']);
 
     echo LRP_Email_UI::note(
-        LRP_Email_UI::strong('Dado errado atrasa pagamento.', '#5C4A00') . ' Se algo acima estiver desatualizado, corrija no perfil o quanto antes.',
+        LRP_Email_UI::strong('Dado errado atrasa pagamento.', LRP_Email_UI::GOLD_SOFT) . ' Se algo acima estiver desatualizado, corrija no perfil o quanto antes.',
         ['tone' => 'gold', 'icon' => '&#9888;']
     );
 

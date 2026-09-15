@@ -25,7 +25,7 @@ echo LRP_Email_UI::p(
 
 if (!empty($reason)) {
     echo LRP_Email_UI::note(
-        LRP_Email_UI::strong('Motivo:', '#7E1815') . ' ' . esc_html($reason),
+        LRP_Email_UI::strong('Motivo:', '#F6A6A0') . ' ' . esc_html($reason),
         ['tone' => 'red']
     );
 }

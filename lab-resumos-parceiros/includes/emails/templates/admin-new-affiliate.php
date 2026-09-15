@@ -41,7 +41,7 @@ echo LRP_Email_UI::details($rows, ['tone' => 'blue']);
 
 if ($affiliate->get_application_notes()) {
     echo LRP_Email_UI::note(
-        LRP_Email_UI::strong('Notas do candidato:', '#0B4C85') . '<br>' . esc_html($affiliate->get_application_notes()),
+        LRP_Email_UI::strong('Notas do candidato:', '#9CCBF5') . '<br>' . esc_html($affiliate->get_application_notes()),
         ['tone' => 'neutral']
     );
 }
