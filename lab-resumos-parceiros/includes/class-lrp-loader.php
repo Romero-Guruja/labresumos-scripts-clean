@@ -78,6 +78,7 @@ class LRP_Loader {
         require_once LRP_PLUGIN_DIR . 'includes/financial/class-lrp-adjustment.php';
         
         // Emails
+        require_once LRP_PLUGIN_DIR . 'includes/emails/class-lrp-email-ui.php';
         require_once LRP_PLUGIN_DIR . 'includes/emails/class-lrp-email-manager.php';
         
         // AJAX

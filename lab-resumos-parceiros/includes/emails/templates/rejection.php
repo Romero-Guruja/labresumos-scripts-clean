@@ -1,22 +1,37 @@
-<h2 style="color: #2A6B9F; margin-top: 0;">Sobre seu cadastro no Programa de Parceiros</h2>
+<?php
+/**
+ * Template de email: Cadastro não aprovado
+ *
+ * @package Lab_Resumos_Parceiros
+ *
+ * Variáveis disponíveis:
+ * - $affiliate_name (string)
+ * - $reason         (string, opcional)
+ */
 
-<p>Olá, <strong><?php echo esc_html($affiliate_name); ?></strong>!</p>
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-<p>Agradecemos seu interesse em fazer parte do Programa de Parceiros Lab Resumos.</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Sobre o seu cadastro',
+    'title'   => 'Não foi desta vez',
+    'tone'    => 'neutral',
+]);
 
-<p>Após análise do seu cadastro, infelizmente não foi possível aprová-lo neste momento.</p>
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate_name)) . '! Obrigado pelo interesse no Programa de Parceiros Lab Resumos. Depois de analisar seu cadastro, não conseguimos aprová-lo neste momento.'
+);
 
-<?php if (!empty($reason)): ?>
-<div style="background-color: #f8d7da; border-left: 4px solid #dc3545; border-radius: 4px; padding: 15px; margin: 20px 0;">
-    <p style="margin: 0;"><strong>Motivo:</strong></p>
-    <p style="margin: 10px 0 0 0; color: #721c24;"><?php echo esc_html($reason); ?></p>
-</div>
-<?php endif; ?>
+if (!empty($reason)) {
+    echo LRP_Email_UI::note(
+        LRP_Email_UI::strong('Motivo:', '#7E1815') . ' ' . esc_html($reason),
+        ['tone' => 'red']
+    );
+}
 
-<p>Se você acredita que houve um engano ou deseja mais informações, entre em contato conosco respondendo este email.</p>
+echo LRP_Email_UI::p(
+    'Se você acha que houve um engano ou quer entender melhor o critério, é só responder este e-mail - a gente revisa com atenção.'
+);
 
-<p>Agradecemos sua compreensão.</p>
-
-<p>Atenciosamente,<br>
-<strong>Equipe Lab Resumos</strong></p>
-
+echo LRP_Email_UI::signoff('Atenciosamente,');

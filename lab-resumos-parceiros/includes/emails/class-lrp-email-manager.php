@@ -134,7 +134,10 @@ class LRP_Email_Manager {
             'dashboard_url'  => $dashboard_url,
         ]);
         
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader'   => 'Seu cupom, seu link e como as comissões funcionam.',
+            'footer_note' => 'Você recebeu este e-mail porque seu cadastro no Programa de Parceiros foi aprovado.',
+        ]);
     }
 
     /**
@@ -156,7 +159,9 @@ class LRP_Email_Manager {
             'reason'         => $reason,
         ]);
         
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => 'Sobre a análise do seu cadastro no Programa de Parceiros.',
+        ]);
     }
 
     /**
@@ -187,7 +192,14 @@ class LRP_Email_Manager {
             'dashboard_url'   => $dashboard_url,
         ]);
         
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => sprintf(
+                'Pedido #%s - R$ %s de comissão entraram para você.',
+                $order->get_id(),
+                number_format($referral->get_direct_commission(), 2, ',', '.')
+            ),
+            'footer_note' => 'Você recebe este aviso a cada venda atribuída ao seu cupom ou link.',
+        ]);
     }
 
     /**
@@ -221,7 +233,14 @@ class LRP_Email_Manager {
             'sponsor_name'     => $sponsor->get_display_name(),
         ]);
         
-        $this->send($sponsor->get_email(), $subject, $content);
+        $this->send($sponsor->get_email(), $subject, $content, [
+            'preheader' => sprintf(
+                '%s vendeu e R$ %s da comissão são seus.',
+                $sub_affiliate->get_display_name(),
+                number_format($commission->get_commission_amount(), 2, ',', '.')
+            ),
+            'footer_note' => 'Comissão de rede: você ganha sobre as vendas de quem você indicou.',
+        ]);
     }
 
     /**
@@ -246,7 +265,12 @@ class LRP_Email_Manager {
             'commission_l2'      => $sponsor->get_commission_rate('l2') . '%',
         ]);
         
-        $this->send($sponsor->get_email(), $subject, $content);
+        $this->send($sponsor->get_email(), $subject, $content, [
+            'preheader' => sprintf(
+                '%s entrou na sua rede pelo seu link de indicação.',
+                $new_affiliate->get_display_name()
+            ),
+        ]);
     }
 
     /**
@@ -287,7 +311,11 @@ class LRP_Email_Manager {
         
         $content = $this->get_template('closing-ready', $template_vars);
         
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => $is_rpa
+                ? sprintf('R$ %s liberados. Você não precisa enviar documento nenhum.', number_format($amount, 2, ',', '.'))
+                : sprintf('R$ %s liberados. Falta só enviar a sua nota fiscal.', number_format($amount, 2, ',', '.')),
+        ]);
     }
 
     /**
@@ -316,7 +344,9 @@ class LRP_Email_Manager {
             'affiliate_name' => $affiliate->get_display_name(),
         ]);
 
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => 'Nota fiscal validada. O PIX sai em até 5 dias úteis.',
+        ]);
     }
 
     /**
@@ -350,7 +380,9 @@ class LRP_Email_Manager {
             'dashboard_url'  => $dashboard_url,
         ]);
 
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => 'Precisamos de uma correção na NF antes de pagar. É rápido.',
+        ]);
     }
 
     /**
@@ -383,7 +415,12 @@ class LRP_Email_Manager {
             'period'         => sprintf('%02d/%d', $closing->period_month, $closing->period_year),
         ]);
         
-        $this->send($affiliate->get_email(), $subject, $content);
+        $this->send($affiliate->get_email(), $subject, $content, [
+            'preheader' => sprintf(
+                'R$ %s enviados via PIX para a chave do seu perfil.',
+                number_format($closing->total_commissions, 2, ',', '.')
+            ),
+        ]);
     }
 
     /**
@@ -434,7 +471,15 @@ class LRP_Email_Manager {
             'admin_url'      => $accountant_url,
         ]);
         
-        $this->send($accountant_email, $subject, $content);
+        $this->send($accountant_email, $subject, $content, [
+            'preheader'   => sprintf(
+                '%s - R$ %s - período %s.',
+                $affiliate->get_display_name(),
+                number_format($closing->total_commissions, 2, ',', '.'),
+                sprintf('%02d/%d', $closing->period_month, $closing->period_year)
+            ),
+            'footer_note' => 'Mensagem interna do Programa de Parceiros.',
+        ]);
     }
 
     /**
@@ -467,36 +512,22 @@ class LRP_Email_Manager {
 
         $accountant_url = admin_url('admin.php?page=lrp-accountant-invoices');
 
-        $content = '<h2 style="color: #2A6B9F; margin-top: 0;">RPA para Emissão</h2>';
-        $content .= '<p>Um novo RPA precisa ser emitido para pagamento de parceiro.</p>';
-        
-        $content .= '<div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #17a2b8;">';
-        $content .= '<h3 style="margin: 0 0 15px 0; color: #0c5460;">Dados do Parceiro</h3>';
-        $content .= '<p style="margin: 0 0 8px 0;"><strong>Nome:</strong> ' . esc_html($rpa_data['nome_completo'] ?? $affiliate->get_display_name()) . '</p>';
-        $content .= '<p style="margin: 0 0 8px 0;"><strong>CPF:</strong> ' . esc_html($rpa_data['cpf_formatted'] ?? '') . '</p>';
-        if (!empty($rpa_data['data_nascimento_fmt'])) {
-            $content .= '<p style="margin: 0 0 8px 0;"><strong>Data de Nascimento:</strong> ' . esc_html($rpa_data['data_nascimento_fmt']) . '</p>';
-        }
-        $content .= '<p style="margin: 0 0 8px 0;"><strong>Endereço:</strong> ' . esc_html($rpa_data['endereco'] ?? '') . '</p>';
-        $content .= '<p style="margin: 0 0 8px 0;"><strong>Telefone:</strong> ' . esc_html($rpa_data['telefone'] ?? '') . '</p>';
-        if (!empty($rpa_data['inss_number'])) {
-            $content .= '<p style="margin: 0 0 8px 0;"><strong>INSS/PIS:</strong> ' . esc_html($rpa_data['inss_number']) . '</p>';
-        }
-        $content .= '<p style="margin: 0;"><strong>Serviço:</strong> ' . esc_html($rpa_data['descricao_servico'] ?? 'Serviços de divulgação e indicação comercial') . '</p>';
-        $content .= '</div>';
+        $content = $this->get_template('accountant-rpa-ready', [
+            'affiliate'      => $affiliate,
+            'affiliate_name' => $affiliate->get_display_name(),
+            'rpa_data'       => $rpa_data,
+            'amount'         => wc_price($amount),
+            'accountant_url' => $accountant_url,
+        ]);
 
-        $content .= '<div style="background-color: #cce5ff; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">';
-        $content .= '<p style="margin: 0; font-size: 14px; color: #004085;">Valor do RPA:</p>';
-        $content .= '<p style="margin: 10px 0; font-size: 28px; font-weight: bold; color: #2A6B9F;">' . wc_price($amount) . '</p>';
-        $content .= '</div>';
-
-        $content .= '<div style="text-align: center; margin: 30px 0;">';
-        $content .= '<a href="' . esc_url($accountant_url) . '" style="display: inline-block; background-color: #17a2b8; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ver RPAs Pendentes</a>';
-        $content .= '</div>';
-
-        $content .= '<p style="color: #666; font-size: 14px;">Após emitir o RPA, acesse o painel para aprovar e prosseguir com o pagamento.</p>';
-
-        $this->send($accountant_email, $subject, $content);
+        $this->send($accountant_email, $subject, $content, [
+            'preheader' => sprintf(
+                'R$ %s para %s. Emitir o RPA e aprovar no painel.',
+                number_format($amount, 2, ',', '.'),
+                $affiliate->get_display_name()
+            ),
+            'footer_note' => 'Mensagem interna do Programa de Parceiros.',
+        ]);
     }
 
     /**
@@ -524,7 +555,10 @@ class LRP_Email_Manager {
             'admin_url'  => $admin_url,
         ]);
         
-        $this->send($admin_email, $subject, $content);
+        $this->send($admin_email, $subject, $content, [
+            'preheader'   => sprintf('%s aguarda aprovação no Programa de Parceiros.', $affiliate->get_display_name()),
+            'footer_note' => 'Mensagem interna do Programa de Parceiros.',
+        ]);
     }
 
     /**
@@ -592,68 +626,127 @@ class LRP_Email_Manager {
      * @param string $to
      * @param string $subject
      * @param string $content
+     * @param array  $args     preheader (linha de prévia na caixa de entrada),
+     *                         footer_note (linha final específica do e-mail)
      * @return bool
      */
-    private function send($to, $subject, $content) {
+    private function send($to, $subject, $content, $args = []) {
+        $from_name  = 'Lab Resumos';
+        $from_email = apply_filters('lrp_email_from_address', get_option('admin_email'));
+
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
-            'From: Lab Resumos <' . get_option('admin_email') . '>',
+            'From: ' . $from_name . ' <' . $from_email . '>',
         ];
-        
+
         // Wrap em template HTML
-        $html = $this->wrap_html($subject, $content);
-        
+        $html = $this->wrap_html($subject, $content, $args);
+
         return wp_mail($to, $subject, $html, $headers);
     }
 
     /**
-     * Envolve conteúdo em HTML
+     * Envolve o conteúdo no "envelope" visual da Lab Resumos.
+     *
+     * Estrutura: fundo navy -> cartão creme 600px -> cabeçalho com a marca ->
+     * conteúdo -> rodapé. Cores travadas contra o dark mode dos clientes
+     * (ver LRP_Email_UI::bg / ::ink para a explicação da técnica).
      *
      * @param string $subject
      * @param string $content
+     * @param array  $args    preheader, footer_note
      * @return string
      */
-    private function wrap_html($subject, $content) {
-        $logo_url = ''; // Pode ser configurável
-        
-        return '<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>' . esc_html($subject) . '</title>
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
-                <tr>
-                    <td align="center">
-                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-                            <!-- Header -->
-                            <tr>
-                                <td style="background-color: #2A6B9F; padding: 30px; text-align: center;">
-                                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Lab Resumos</h1>
-                                    <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9;">Programa de Parceiros</p>
-                                </td>
-                            </tr>
-                            <!-- Content -->
-                            <tr>
-                                <td style="padding: 30px;">
-                                    ' . $content . '
-                                </td>
-                            </tr>
-                            <!-- Footer -->
-                            <tr>
-                                <td style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666;">
-                                    <p style="margin: 0;">&copy; ' . date('Y') . ' Lab Resumos. Todos os direitos reservados.</p>
-                                    <p style="margin: 5px 0 0 0;">Este email foi enviado automaticamente. Por favor, não responda.</p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>';
+    private function wrap_html($subject, $content, $args = []) {
+        $args = array_merge([
+            'preheader'   => '',
+            'footer_note' => '',
+        ], $args);
+
+        $navy   = LRP_Email_UI::NAVY;
+        $cream  = LRP_Email_UI::CREAM_LIGHT;
+        $gold   = LRP_Email_UI::GOLD;
+        $font   = LRP_Email_UI::FONT;
+        $site   = home_url('/');
+
+        // Linha de prévia: aparece ao lado do assunto na caixa de entrada e
+        // some no corpo da mensagem.
+        $preheader = '';
+        if ($args['preheader'] !== '') {
+            $preheader = '<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:' . $cream . ';">'
+                . esc_html($args['preheader'])
+                . str_repeat('&#847;&zwnj;&nbsp;', 60)
+                . '</div>';
+        }
+
+        $footer_note = $args['footer_note'] !== ''
+            ? '<div style="font-family:' . $font . '; font-size:12px; line-height:1.6; text-align:center; margin:0 0 10px; ' . LRP_Email_UI::ink('#9AA2AF') . '">' . esc_html($args['footer_note']) . '</div>'
+            : '';
+
+        return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="x-apple-disable-message-reformatting" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<title>' . esc_html($subject) . '</title>
+</head>
+<body style="margin:0; padding:0; width:100%; ' . LRP_Email_UI::bg($navy) . '">
+' . $preheader . '
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $navy . '" style="' . LRP_Email_UI::bg($navy) . '">
+<tr>
+<td align="center" style="padding:28px 12px; ' . LRP_Email_UI::bg($navy) . '">
+
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="' . $cream . '" style="width:600px; max-width:100%; border-radius:22px; overflow:hidden; ' . LRP_Email_UI::bg($cream) . '">
+
+    <tr>
+      <td bgcolor="' . $navy . '" style="padding:26px 30px; ' . LRP_Email_UI::bg($navy) . '">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td align="left" valign="middle">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="8" valign="middle" style="width:8px; padding:0 10px 0 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td width="8" height="30" bgcolor="' . $gold . '" style="width:8px; height:30px; border-radius:3px; line-height:30px; font-size:0; ' . LRP_Email_UI::bg($gold) . '">&nbsp;</td>
+                </tr></table>
+              </td>
+              <td valign="middle" style="font-family:' . $font . ';">
+                <div style="font-size:19px; font-weight:bold; letter-spacing:-0.01em; line-height:1.15; ' . LRP_Email_UI::ink($gold) . '">LAB RESUMOS</div>
+                <div style="font-size:11px; font-weight:bold; letter-spacing:1.4px; text-transform:uppercase; line-height:1.3; margin:3px 0 0; ' . LRP_Email_UI::ink('#9AA2AF') . '">Programa de Parceiros</div>
+              </td>
+            </tr></table>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+
+    <tr>
+      <td bgcolor="' . $cream . '" style="padding:36px 30px 34px; ' . LRP_Email_UI::bg($cream) . '">
+' . $content . '
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" bgcolor="' . $navy . '" style="padding:24px 30px; ' . LRP_Email_UI::bg($navy) . '">
+        ' . $footer_note . '
+        <div style="font-family:' . $font . '; font-size:12px; line-height:1.6; text-align:center; margin:0 0 6px; ' . LRP_Email_UI::ink('#9AA2AF') . '">
+          Dúvidas? É só responder este e-mail - uma pessoa de verdade vai ler.
+        </div>
+        <div style="font-family:' . $font . '; font-size:11px; line-height:1.6; text-align:center; margin:0; ' . LRP_Email_UI::ink('#8A919E') . '">
+          <a href="' . esc_url($site) . '" style="text-decoration:none; ' . LRP_Email_UI::ink('#9AA2AF') . '">labresumos.com.br</a>
+          &nbsp;&middot;&nbsp; &copy; ' . esc_html(date('Y')) . ' Lab Resumos
+        </div>
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>';
     }
 }
 

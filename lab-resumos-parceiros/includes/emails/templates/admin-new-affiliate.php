@@ -1,9 +1,9 @@
 <?php
 /**
- * Template de email: Novo afiliado para admin
+ * Template de email: Novo cadastro aguardando aprovação (interno - admin)
  *
  * @package Lab_Resumos_Parceiros
- * 
+ *
  * Variáveis disponíveis:
  * - $affiliate (LRP_Affiliate)
  * - $admin_url (string)
@@ -16,31 +16,34 @@ if (!defined('ABSPATH')) {
 if (!$affiliate) {
     return;
 }
-?>
-<h2>Novo parceiro aguardando aprovação 📋</h2>
 
-<p>Um novo candidato se cadastrou no Programa de Parceiros:</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Interno &middot; aprovação pendente',
+    'icon'    => '&#128203;', // 📋
+    'title'   => 'Novo parceiro aguardando análise',
+    'tone'    => 'blue',
+]);
 
-<div class="highlight">
-    <p><strong>Nome:</strong> <?php echo esc_html($affiliate->get_display_name()); ?></p>
-    <p><strong>Email:</strong> <?php echo esc_html($affiliate->get_email()); ?></p>
-    <p><strong>Data:</strong> <?php echo esc_html(date('d/m/Y H:i')); ?></p>
-    <?php if ($affiliate->get_sponsor_id()): ?>
-        <?php $sponsor = new LRP_Affiliate($affiliate->get_sponsor_id()); ?>
-        <?php if ($sponsor->get_display_name()): ?>
-            <p><strong>Indicado por:</strong> <?php echo esc_html($sponsor->get_display_name()); ?></p>
-        <?php endif; ?>
-    <?php endif; ?>
-</div>
+$rows = [
+    ['label' => 'Nome',  'value' => esc_html($affiliate->get_display_name()), 'strong' => true],
+    ['label' => 'Email', 'value' => esc_html($affiliate->get_email())],
+    ['label' => 'Data',  'value' => esc_html(date('d/m/Y H:i'))],
+];
 
-<?php if ($affiliate->get_application_notes()): ?>
-<p><strong>Notas do candidato:</strong></p>
-<blockquote style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6c757d; margin: 15px 0;">
-    <?php echo esc_html($affiliate->get_application_notes()); ?>
-</blockquote>
-<?php endif; ?>
+if ($affiliate->get_sponsor_id()) {
+    $sponsor = new LRP_Affiliate($affiliate->get_sponsor_id());
+    if ($sponsor->get_display_name()) {
+        $rows[] = ['label' => 'Indicado por', 'value' => esc_html($sponsor->get_display_name())];
+    }
+}
 
-<p style="text-align: center;">
-    <a href="<?php echo esc_url($admin_url); ?>" class="btn">Revisar Cadastro</a>
-</p>
+echo LRP_Email_UI::details($rows, ['tone' => 'blue']);
 
+if ($affiliate->get_application_notes()) {
+    echo LRP_Email_UI::note(
+        LRP_Email_UI::strong('Notas do candidato:', '#0B4C85') . '<br>' . esc_html($affiliate->get_application_notes()),
+        ['tone' => 'neutral']
+    );
+}
+
+echo LRP_Email_UI::button($admin_url, 'Revisar cadastro', ['tone' => 'blue']);

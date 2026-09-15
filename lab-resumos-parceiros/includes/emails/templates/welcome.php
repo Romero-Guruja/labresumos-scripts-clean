@@ -1,42 +1,64 @@
-<h2 style="color: #2A6B9F; margin-top: 0;">Bem-vindo ao Programa de Parceiros! 🎉</h2>
+<?php
+/**
+ * Template de email: Boas-vindas ao Programa de Parceiros
+ *
+ * @package Lab_Resumos_Parceiros
+ *
+ * Variáveis disponíveis:
+ * - $affiliate_name (string)
+ * - $coupon_code    (string)
+ * - $referral_url   (string)
+ * - $dashboard_url  (string)
+ */
 
-<p>Olá, <strong><?php echo esc_html($affiliate_name); ?></strong>!</p>
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-<p>Seu cadastro foi aprovado e agora você faz parte do nosso time de parceiros! Estamos muito felizes em ter você conosco.</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Cadastro aprovado',
+    'icon'    => '&#127881;', // 🎉
+    'title'   => 'Bem-vindo ao time de parceiros',
+    'tone'    => 'gold',
+]);
 
-<div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-    <h3 style="margin-top: 0; color: #2A6B9F;">Seus dados de divulgação</h3>
-    
-    <p><strong>Seu cupom de desconto:</strong></p>
-    <div style="background-color: #2A6B9F; color: white; padding: 15px 25px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin: 10px 0;">
-        <?php echo esc_html($coupon_code); ?>
-    </div>
-    <p style="font-size: 12px; color: #666;">O cliente recebe 10% de desconto e você ganha 10% de comissão!</p>
-    
-    <p style="margin-top: 20px;"><strong>Seu link de afiliado:</strong></p>
-    <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; word-break: break-all; font-family: monospace;">
-        <?php echo esc_url($referral_url); ?>
-    </div>
-    <p style="font-size: 12px; color: #666;">Cookie válido por 60 dias. Comissão: 5%</p>
-</div>
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate_name)) . '! Seu cadastro foi aprovado. A partir de agora, toda venda que vier da sua indicação vira comissão para você.',
+    ['align' => 'center']
+);
 
-<h3 style="color: #2A6B9F;">Como funciona?</h3>
+echo LRP_Email_UI::h3('Seu cupom exclusivo');
 
-<ol style="line-height: 1.8;">
-    <li><strong>Divulgue</strong> nossos cursos usando seu cupom ou link</li>
-    <li><strong>Ganhe comissões</strong> por cada venda realizada</li>
-    <li><strong>Acompanhe</strong> tudo pelo seu painel</li>
-    <li><strong>Receba</strong> seus ganhos mensalmente via PIX</li>
-</ol>
+echo LRP_Email_UI::code_block($coupon_code, ['big' => true]);
 
-<div style="text-align: center; margin: 30px 0;">
-    <a href="<?php echo esc_url($dashboard_url); ?>" 
-       style="display: inline-block; background-color: #2A6B9F; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-        Acessar Meu Painel
-    </a>
-</div>
+echo LRP_Email_UI::p(
+    'Quem usa esse cupom ganha ' . LRP_Email_UI::strong('10% de desconto') . '. Você ganha ' . LRP_Email_UI::strong('10% de comissão') . ' sobre a compra.',
+    ['size' => 15]
+);
 
-<p>Qualquer dúvida, acesse a aba FAQ no seu painel ou entre em contato conosco.</p>
+echo LRP_Email_UI::code_block($referral_url, ['label' => 'Seu link de indicação']);
 
-<p>Boas vendas! 🚀</p>
+echo LRP_Email_UI::p(
+    'Quem entra pelo link fica marcado como seu por ' . LRP_Email_UI::strong('60 dias') . ', mesmo que compre depois. Comissão de ' . LRP_Email_UI::strong('5%') . '.',
+    ['size' => 15]
+);
 
+echo LRP_Email_UI::divider();
+
+echo LRP_Email_UI::h3('Como funciona');
+
+echo LRP_Email_UI::steps([
+    ['title' => 'Divulgue', 'text' => 'use seu cupom ou seu link onde quiser'],
+    ['title' => 'Venda',    'text' => 'a comissão é registrada automaticamente'],
+    ['title' => 'Acompanhe', 'text' => 'tudo aparece em tempo real no seu painel'],
+    ['title' => 'Receba',   'text' => 'pagamento mensal via PIX'],
+]);
+
+echo LRP_Email_UI::button($dashboard_url, 'Acessar meu painel', ['tone' => 'gold']);
+
+echo LRP_Email_UI::p(
+    'Dúvidas sobre regras, prazos ou pagamento? A aba FAQ do painel responde quase tudo - e o resto é só responder este e-mail.',
+    ['align' => 'center', 'size' => 15, 'color' => LRP_Email_UI::MUTED]
+);
+
+echo LRP_Email_UI::signoff('Boas vendas,');

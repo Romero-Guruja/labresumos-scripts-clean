@@ -3,10 +3,13 @@
  * Template de email: Pagamento realizado
  *
  * @package Lab_Resumos_Parceiros
- * 
+ *
  * Variáveis disponíveis:
- * - $affiliate (LRP_Affiliate)
- * - $closing (object)
+ * - $affiliate      (LRP_Affiliate)
+ * - $closing        (object)
+ * - $affiliate_name (string)
+ * - $amount         (string, já formatado)
+ * - $period         (string, MM/AAAA)
  */
 
 if (!defined('ABSPATH')) {
@@ -14,22 +17,40 @@ if (!defined('ABSPATH')) {
 }
 
 $period = sprintf('%02d/%d', $closing->period_month, $closing->period_year);
-?>
-<h2>Pagamento realizado! 🎉💰</h2>
 
-<p>Olá, <?php echo esc_html($affiliate->get_display_name()); ?>!</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Pagamento concluído',
+    'icon'    => '&#128184;', // 💸
+    'title'   => 'O dinheiro já saiu daqui',
+    'tone'    => 'gold',
+]);
 
-<p>Seu pagamento referente ao período <strong><?php echo esc_html($period); ?></strong> foi processado com sucesso!</p>
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate->get_display_name())) . '! Suas comissões do período ' . LRP_Email_UI::strong(esc_html($period)) . ' foram pagas.',
+    ['align' => 'center']
+);
 
-<div class="highlight" style="background: #d4edda; border-left: 4px solid #28a745;">
-    <p><strong>Valor:</strong> R$ <?php echo esc_html(number_format($closing->total_commissions, 2, ',', '.')); ?></p>
-    <p><strong>Data:</strong> <?php echo esc_html(date('d/m/Y', strtotime($closing->paid_at))); ?></p>
-    <p><strong>Método:</strong> PIX</p>
-</div>
+echo LRP_Email_UI::amount([
+    'label'   => 'Valor pago',
+    'value'   => 'R$ ' . number_format($closing->total_commissions, 2, ',', '.'),
+    'caption' => 'Via PIX, na chave cadastrada no seu perfil',
+    'tone'    => 'gold',
+]);
 
-<p>O valor foi enviado para a chave PIX cadastrada em seu perfil.</p>
+echo LRP_Email_UI::details([
+    ['label' => 'Período',  'value' => esc_html($period)],
+    ['label' => 'Data',     'value' => esc_html(date('d/m/Y', strtotime($closing->paid_at)))],
+    ['label' => 'Método',   'value' => 'PIX'],
+]);
 
-<p>Continue divulgando e aumentando suas comissões!</p>
+echo LRP_Email_UI::note(
+    'Se o valor não aparecer na sua conta em algumas horas, confira a chave PIX no seu perfil e responda este e-mail.',
+    ['tone' => 'blue', 'icon' => '&#128172;'] // 💬
+);
 
-<p>Obrigado por fazer parte do Programa de Parceiros Lab Resumos! 🚀</p>
+echo LRP_Email_UI::p(
+    'Obrigado por divulgar a Lab. O próximo ciclo já começou a contar.',
+    ['align' => 'center', 'size' => 15, 'color' => LRP_Email_UI::MUTED]
+);
 
+echo LRP_Email_UI::signoff();

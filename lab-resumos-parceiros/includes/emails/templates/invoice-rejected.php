@@ -3,45 +3,54 @@
  * Template de email: NF rejeitada
  *
  * @package Lab_Resumos_Parceiros
- * 
+ *
  * Variáveis disponíveis:
- * - $affiliate (LRP_Affiliate)
- * - $closing (object)
- * - $reason (string)
- * - $dashboard_url (string)
+ * - $affiliate      (LRP_Affiliate)
+ * - $closing        (object)
+ * - $affiliate_name (string)
+ * - $reason         (string)
+ * - $dashboard_url  (string)
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-$period = sprintf('%02d/%d', $closing->period_month, $closing->period_year);
-?>
-<h2>Atenção, <?php echo esc_html($affiliate->get_display_name()); ?>!</h2>
-
-<p>Sua Nota Fiscal referente ao período <strong><?php echo esc_html($period); ?></strong> precisa de correção.</p>
-
-<div class="highlight" style="background: #fff3cd; border-left: 4px solid #ffc107;">
-    <p><strong>Motivo da rejeição:</strong></p>
-    <p><?php echo esc_html($reason); ?></p>
-</div>
-
-<p>Por favor, emita uma nova NF corrigida e envie novamente pelo seu painel.</p>
-
-<h3>Lembrete - Dados para emissão da NF:</h3>
-
-<?php 
+$period   = sprintf('%02d/%d', $closing->period_month, $closing->period_year);
 $settings = LRP_Settings::instance();
-?>
-<div class="highlight">
-    <p><strong>Tomador:</strong> <?php echo esc_html($settings->get('company_name')); ?></p>
-    <p><strong>CNPJ:</strong> <?php echo esc_html($settings->get('company_cnpj')); ?></p>
-    <p><strong>Endereço:</strong> <?php echo esc_html($settings->get('company_address')); ?></p>
-    <p><strong>Valor:</strong> R$ <?php echo esc_html(number_format($closing->total_commissions, 2, ',', '.')); ?></p>
-    <p><strong>Descrição:</strong> Serviços de divulgação e indicação comercial - Período <?php echo esc_html($period); ?></p>
-</div>
 
-<p style="text-align: center;">
-    <a href="<?php echo esc_url($dashboard_url); ?>" class="btn">Enviar Nova NF</a>
-</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Ação necessária',
+    'icon'    => '&#128221;', // 📝
+    'title'   => 'Sua NF precisa de um ajuste',
+    'tone'    => 'red',
+]);
 
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate->get_display_name())) . '! A nota fiscal do período ' . LRP_Email_UI::strong(esc_html($period)) . ' não passou na validação. Nada foi perdido: é só reenviar corrigida.',
+    ['align' => 'center']
+);
+
+echo LRP_Email_UI::note(
+    LRP_Email_UI::strong('Motivo:', '#7E1815') . ' ' . esc_html($reason),
+    ['tone' => 'red', 'icon' => '&#9888;'] // ⚠
+);
+
+echo LRP_Email_UI::h3('Dados corretos para a nova NF');
+
+echo LRP_Email_UI::details([
+    ['label' => 'Tomador',   'value' => esc_html($settings->get('company_name'))],
+    ['label' => 'CNPJ',      'value' => esc_html($settings->get('company_cnpj'))],
+    ['label' => 'Endereço',  'value' => esc_html($settings->get('company_address'))],
+    ['label' => 'Valor',     'value' => 'R$ ' . number_format($closing->total_commissions, 2, ',', '.'), 'strong' => true],
+    ['label' => 'Descrição', 'value' => 'Serviços de divulgação e indicação comercial - Período ' . esc_html($period)],
+], ['tone' => 'blue']);
+
+echo LRP_Email_UI::button($dashboard_url, 'Enviar nova NF', ['tone' => 'gold']);
+
+echo LRP_Email_UI::p(
+    'Ficou em dúvida sobre o que corrigir? Responda este e-mail que a gente explica.',
+    ['align' => 'center', 'size' => 15, 'color' => LRP_Email_UI::MUTED]
+);
+
+echo LRP_Email_UI::signoff('Conte com a gente,');

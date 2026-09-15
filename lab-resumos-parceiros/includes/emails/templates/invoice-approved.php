@@ -3,10 +3,11 @@
  * Template de email: NF aprovada
  *
  * @package Lab_Resumos_Parceiros
- * 
+ *
  * Variáveis disponíveis:
- * - $affiliate (LRP_Affiliate)
- * - $closing (object)
+ * - $affiliate      (LRP_Affiliate)
+ * - $closing        (object)
+ * - $affiliate_name (string)
  */
 
 if (!defined('ABSPATH')) {
@@ -14,19 +15,34 @@ if (!defined('ABSPATH')) {
 }
 
 $period = sprintf('%02d/%d', $closing->period_month, $closing->period_year);
-?>
-<h2>Ótimas notícias, <?php echo esc_html($affiliate->get_display_name()); ?>! ✅</h2>
 
-<p>Sua Nota Fiscal referente ao período <strong><?php echo esc_html($period); ?></strong> foi aprovada!</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Nota fiscal aprovada',
+    'icon'    => '&#9989;', // ✅
+    'title'   => 'Tudo certo com a sua NF',
+    'tone'    => 'blue',
+]);
 
-<div class="highlight">
-    <p><strong>NF Número:</strong> <?php echo esc_html($closing->invoice_number ?: 'N/A'); ?></p>
-    <p><strong>Valor:</strong> R$ <?php echo esc_html(number_format($closing->total_commissions, 2, ',', '.')); ?></p>
-</div>
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate->get_display_name())) . '! Sua nota fiscal do período ' . LRP_Email_UI::strong(esc_html($period)) . ' foi validada e seguiu para pagamento.',
+    ['align' => 'center']
+);
 
-<p>O pagamento será realizado via PIX em até <strong>5 dias úteis</strong>.</p>
+echo LRP_Email_UI::amount([
+    'label'   => 'A receber',
+    'value'   => 'R$ ' . number_format($closing->total_commissions, 2, ',', '.'),
+    'caption' => 'Via PIX, em até 5 dias úteis',
+    'tone'    => 'blue',
+]);
 
-<p>Você receberá uma confirmação assim que o pagamento for processado.</p>
+echo LRP_Email_UI::details([
+    ['label' => 'Nota fiscal', 'value' => esc_html($closing->invoice_number ?: 'N/A')],
+    ['label' => 'Período',     'value' => esc_html($period)],
+]);
 
-<p>Obrigado por fazer parte do nosso programa de parceiros! 🙏</p>
+echo LRP_Email_UI::p(
+    'Você vai receber outro e-mail assim que o pagamento for processado. Não precisa fazer mais nada.',
+    ['align' => 'center', 'size' => 15, 'color' => LRP_Email_UI::MUTED]
+);
 
+echo LRP_Email_UI::signoff();

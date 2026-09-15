@@ -3,7 +3,7 @@
  * Plugin Name: Programa de Parceiros Lab Resumos
  * Plugin URI: https://labresumos.com.br
  * Description: Sistema completo de afiliados com cupons exclusivos, links de rastreamento, estrutura multi-nível e integração com Guruja.
- * Version: 1.8.0
+ * Version: 1.9.0
  * Author: Lab Resumos
  * Author URI: https://labresumos.com.br
  * Text Domain: lab-resumos-parceiros
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes do plugin
-define('LRP_VERSION', '1.8.0');
+define('LRP_VERSION', '1.9.0');
 define('LRP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LRP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LRP_PLUGIN_BASENAME', plugin_basename(__FILE__));

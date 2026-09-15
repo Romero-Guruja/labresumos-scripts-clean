@@ -1,41 +1,56 @@
-<h2 style="color: #28a745; margin-top: 0;">Nova venda realizada! 💰</h2>
+<?php
+/**
+ * Template de email: Nova venda direta
+ *
+ * @package Lab_Resumos_Parceiros
+ *
+ * Variáveis disponíveis:
+ * - $affiliate_name (string)
+ * - $order_id       (int)
+ * - $order_total    (string, já formatado por wc_price)
+ * - $commission     (string, já formatado por wc_price)
+ * - $attribution    (string) "Cupom" ou "Link"
+ * - $dashboard_url  (string)
+ */
 
-<p>Olá, <strong><?php echo esc_html($affiliate_name); ?></strong>!</p>
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-<p>Parabéns! Uma nova venda foi atribuída a você.</p>
+echo LRP_Email_UI::hero([
+    'eyebrow' => 'Nova venda atribuída a você',
+    'icon'    => '&#128176;', // 💰
+    'title'   => 'Mais uma venda no seu nome',
+    'tone'    => 'gold',
+]);
 
-<div style="background-color: #d4edda; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-            <td style="padding: 8px 0;"><strong>Pedido:</strong></td>
-            <td style="padding: 8px 0; text-align: right;">#<?php echo esc_html($order_id); ?></td>
-        </tr>
-        <tr>
-            <td style="padding: 8px 0;"><strong>Valor da Compra:</strong></td>
-            <td style="padding: 8px 0; text-align: right;"><?php echo $order_total; ?></td>
-        </tr>
-        <tr>
-            <td style="padding: 8px 0;"><strong>Atribuição:</strong></td>
-            <td style="padding: 8px 0; text-align: right;"><?php echo esc_html($attribution); ?></td>
-        </tr>
-        <tr style="border-top: 1px solid #c3e6cb;">
-            <td style="padding: 12px 0; font-size: 18px;"><strong>Sua Comissão:</strong></td>
-            <td style="padding: 12px 0; text-align: right; font-size: 18px; color: #28a745;"><strong><?php echo $commission; ?></strong></td>
-        </tr>
-    </table>
-</div>
+echo LRP_Email_UI::p(
+    'Olá, ' . LRP_Email_UI::strong(esc_html($affiliate_name)) . '! Uma compra acabou de ser atribuída à sua divulgação.',
+    ['align' => 'center']
+);
 
-<p style="color: #666; font-size: 14px;">
-    <em>A comissão ficará pendente até a confirmação do pagamento pelo cliente. 
-    Após isso, será aprovada automaticamente.</em>
-</p>
+echo LRP_Email_UI::amount([
+    'label' => 'Sua comissão',
+    'value' => $commission,
+    'tone'  => 'gold',
+]);
 
-<div style="text-align: center; margin: 30px 0;">
-    <a href="<?php echo esc_url($dashboard_url); ?>" 
-       style="display: inline-block; background-color: #2A6B9F; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px;">
-        Ver Detalhes no Painel
-    </a>
-</div>
+echo LRP_Email_UI::details([
+    ['label' => 'Pedido',          'value' => '#' . esc_html($order_id)],
+    ['label' => 'Valor da compra', 'value' => $order_total],
+    ['label' => 'Atribuída por',   'value' => esc_html($attribution)],
+]);
 
-<p>Continue divulgando e aumente seus ganhos! 🚀</p>
+echo LRP_Email_UI::note(
+    'A comissão fica ' . LRP_Email_UI::strong('pendente', '#0B4C85') . ' até a confirmação do pagamento pelo cliente. Depois disso, é aprovada automaticamente e entra no seu próximo fechamento.',
+    ['tone' => 'blue', 'icon' => '&#8987;'] // ⏳
+);
 
+echo LRP_Email_UI::button($dashboard_url, 'Ver no meu painel', ['tone' => 'gold']);
+
+echo LRP_Email_UI::p(
+    'Continue divulgando: cada indicação sua vira material na mão de quem está estudando.',
+    ['align' => 'center', 'size' => 15, 'color' => LRP_Email_UI::MUTED]
+);
+
+echo LRP_Email_UI::signoff();
