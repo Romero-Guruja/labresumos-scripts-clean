@@ -3,7 +3,7 @@
  * Plugin Name: Lab Resumos - Acessos
  * Plugin URI: https://labresumos.com.br
  * Description: Concede acesso de cortesia a cursos via pedido WooCommerce, reaproveitando Edwiser Bridge + cpf-sender-api + DRM. Resolve identidade (CPF/email) e provisiona o usuario; a matricula no Moodle e o envio do CPF continuam a cargo da infra existente.
- * Version: 1.3.0
+ * Version: 1.6.0
  * Author: Lab Resumos
  * Author URI: https://labresumos.com.br
  * License: GPL v2 or later
@@ -17,7 +17,7 @@
 
 defined('ABSPATH') || exit;
 
-define('LRA_VERSION', '1.3.0');
+define('LRA_VERSION', '1.6.0');
 define('LRA_PLUGIN_FILE', __FILE__);
 define('LRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LRA_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -81,6 +81,11 @@ final class Lab_Resumos_Acessos {
         require_once LRA_PLUGIN_DIR . 'includes/class-lra-onboarding.php';
         require_once LRA_PLUGIN_DIR . 'includes/class-lra-access.php';
         require_once LRA_PLUGIN_DIR . 'includes/class-lra-enrollment.php';
+        require_once LRA_PLUGIN_DIR . 'includes/class-lra-order-search.php';
+        require_once LRA_PLUGIN_DIR . 'includes/class-lra-users.php';
+        require_once LRA_PLUGIN_DIR . 'includes/class-lra-expiration.php';
+        require_once LRA_PLUGIN_DIR . 'includes/class-lra-expiry-anchor.php';
+        require_once LRA_PLUGIN_DIR . 'includes/class-lra-expiry-mail.php';
 
         if (is_admin()) {
             require_once LRA_PLUGIN_DIR . 'admin/class-lra-admin.php';
@@ -96,6 +101,11 @@ final class Lab_Resumos_Acessos {
 
         LRA_Roles::init();
         LRA_Enrollment::init();
+        LRA_Order_Search::init();
+        LRA_Users::init();
+        LRA_Expiration::init();
+        LRA_Expiry_Anchor::init();
+        LRA_Expiry_Mail::init();
 
         // Compatibilidade com HPOS.
         add_action('before_woocommerce_init', function () {
@@ -142,6 +152,14 @@ final class Lab_Resumos_Acessos {
 // DEPOIS do plugins_loaded, entao registrar o hook dentro dele nunca dispara.
 require_once LRA_PLUGIN_DIR . 'includes/class-lra-conflicts.php';
 register_activation_hook(LRA_PLUGIN_FILE, ['LRA_Conflicts', 'install_table']);
+
+// Remove os crons de expiracao ao desativar o plugin.
+register_deactivation_hook(LRA_PLUGIN_FILE, function () {
+    wp_clear_scheduled_hook('lra_expire_access');
+    wp_clear_scheduled_hook('lra_expire_notice');
+    wp_clear_scheduled_hook('lra_refresh_blocked_users');
+    wp_clear_scheduled_hook('lra_refresh_blocked_users_recurring');
+});
 
 add_action('plugins_loaded', function () {
     Lab_Resumos_Acessos::instance();
