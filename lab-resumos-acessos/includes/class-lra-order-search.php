@@ -128,16 +128,25 @@ class LRA_Order_Search {
     }
 
     /**
-     * Extrai somente os digitos do termo buscado.
+     * Extrai os digitos do termo, se ele for plausivelmente um CPF.
      *
-     * Retorna string vazia quando o termo nao parece um CPF (evita JOIN
-     * inutil em buscas por nome/e-mail dentro do filtro "Tudo").
+     * Retorna string vazia quando o termo NAO parece um CPF (tem letras,
+     * arroba etc.), para nao transformar uma busca textual em busca numerica.
+     * Sem esse teste, um termo como "romero+teste1@..." reduz a "1" e a
+     * clausula vira CPF LIKE '%1%', que casa com quase todo CPF da base.
      *
      * @param string $search_term
      * @return string
      */
     private static function digits($search_term) {
-        $digits = preg_replace('/\D/', '', (string) $search_term);
+        $search_term = trim((string) $search_term);
+
+        // Apenas digitos e a pontuacao usual de CPF.
+        if (!preg_match('/^[0-9.\-\s]+$/', $search_term)) {
+            return '';
+        }
+
+        $digits = preg_replace('/\D/', '', $search_term);
 
         // CPF tem 11 digitos; aceitamos buscas parciais de 3+ digitos, mas
         // nunca mais de 11 (aí não é CPF).

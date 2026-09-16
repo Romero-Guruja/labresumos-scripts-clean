@@ -89,7 +89,6 @@ class LRA_Enrollment {
                 // $wpdb->prepare/esc_like - nao reescapar.
                 $like_value = $matches[1];
                 $raw_term   = trim($like_value, '%');
-                $digits     = preg_replace('/\D+/', '', $raw_term);
 
                 $conditions = [
                     "p.post_title LIKE '{$like_value}'",
@@ -102,10 +101,18 @@ class LRA_Enrollment {
                         . " AND meta_value LIKE '{$like_value}')",
                 ];
 
-                // Com digitos no termo, compara tambem contra o CPF sem
-                // pontuacao: "123.456.789-00" e "12345678900" acham o mesmo
-                // aluno.
-                if (!empty($digits)) {
+                // Comparacao por CPF normalizado (sem pontuacao) SOMENTE quando
+                // o termo parece um CPF: apenas digitos e pontuacao de CPF, com
+                // 3+ digitos.
+                //
+                // O teste do formato e essencial. Sem ele, um termo comum como
+                // "romero+teste1@..." reduz a "1" e a busca vira
+                // CPF LIKE '%1%', que casa com quase todo CPF do site
+                // (observado: 7.386 matriculas retornadas para a busca de um
+                // aluno que tem 2).
+                $digits = preg_replace('/\D+/', '', $raw_term);
+
+                if (strlen($digits) >= 3 && preg_match('/^[0-9.\-\s]+$/', $raw_term)) {
                     $digits_like  = '%' . $wpdb->esc_like($digits) . '%';
                     $conditions[] = "e.user_id IN (SELECT user_id FROM {$wpdb->usermeta}"
                         . " WHERE meta_key IN ('billing_cpf','_billing_cpf')"
