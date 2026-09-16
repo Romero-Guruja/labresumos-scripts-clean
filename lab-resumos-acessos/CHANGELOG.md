@@ -70,6 +70,21 @@ mundo sem conta no Moodle").
 ### `ROLES_VERSION`
 Bumpado 3 → 4 (adiciona `list_users` ao papel `lra_suporte`).
 
+### Nota de verificação (mesma data)
+Na verificação pós-deploy apareceu um bug na normalização de CPF, corrigido em
+seguida: os dígitos eram extraídos de **qualquer** termo, então uma busca por
+`romero+teste1@labresumos.com.br` reduzia a `"1"` e virava `CPF LIKE '%1%'`,
+casando com quase toda a base — a tela Matrículas devolvia **7.386** linhas para
+um aluno com 2 matrículas. Agora a comparação por dígitos só entra quando o termo
+tem **apenas dígitos e pontuação de CPF** (`/^[0-9.\-\s]+$/`, 3+ dígitos), nos
+dois pontos (`LRA_Enrollment::broaden_search()` e `LRA_Order_Search::digits()`).
+Revalidado: e-mail → 2, nome → 4, CPF (com e sem pontuação) → 3, curso → 5.922.
+
+Também validado ponta a ponta o item "Bloqueado": suspendendo um aluno real no
+Moodle a contagem foi de 11 → 12 e ele apareceu no filtro; revertido em seguida
+(estado original restaurado). Cruzamento com `mdl_user.suspended`: **zero falsos
+positivos**; o único suspenso ausente não tem conta correspondente no WordPress.
+
 ---
 
 ## 1.3.0 — 2026-07-20
