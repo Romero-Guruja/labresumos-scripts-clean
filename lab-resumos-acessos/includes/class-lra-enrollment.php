@@ -39,6 +39,83 @@ class LRA_Enrollment {
             [__CLASS__, 'unenroll_ajax_bridge'],
             5
         );
+
+        // Amplia a busca da nossa tela para nome/e-mail/CPF (ver
+        // broaden_search para o porque disso ser necessario aqui).
+        add_filter('query', [__CLASS__, 'broaden_search'], 1);
+    }
+
+    /**
+     * Amplia a busca da tela "Matriculas" para curso, aluno e CPF.
+     *
+     * O Edwiser monta a query da lista com a condicao fixa
+     * "p.post_title LIKE '%termo%'", ou seja, so encontra pelo NOME DO CURSO.
+     * Para o atendimento isso e inutil: a Mavi tem o e-mail ou o CPF do aluno,
+     * nao o nome do curso - e sem busca util a tela vira 10 mil matriculas
+     * paginadas.
+     *
+     * Existe um snippet WPCode em producao que faz isso, mas ele so age quando
+     * $_REQUEST['page'] === 'mucp-manage-enrollment' (a tela nativa do
+     * Edwiser), portanto nunca na nossa pagina - que e a unica que o suporte
+     * consegue abrir, ja que a do Edwiser exige manage_options. Por isso a
+     * logica e replicada aqui, escopada na NOSSA pagina.
+     *
+     * Interceptamos via filtro nativo `query` do $wpdb porque o Edwiser nao
+     * oferece hook na clausula de busca. O escopo e triplo (area admin +
+     * nossa pagina + query da tabela de matriculas com post_title), entao
+     * nenhuma outra query do site e afetada.
+     *
+     * @param string $query
+     * @return string
+     */
+    public static function broaden_search($query) {
+        if (!is_admin()) {
+            return $query;
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if (!isset($_REQUEST['page']) || self::PAGE !== $_REQUEST['page']) {
+            return $query;
+        }
+        if (false === strpos($query, 'moodle_enrollment') || false === stripos($query, 'post_title')) {
+            return $query;
+        }
+
+        global $wpdb;
+
+        return preg_replace_callback(
+            "/p\.post_title\s+like\s+'([^']*)'/i",
+            function ($matches) use ($wpdb) {
+                // Ja vem escapado (%termo%) pelo proprio Edwiser via
+                // $wpdb->prepare/esc_like - nao reescapar.
+                $like_value = $matches[1];
+                $raw_term   = trim($like_value, '%');
+                $digits     = preg_replace('/\D+/', '', $raw_term);
+
+                $conditions = [
+                    "p.post_title LIKE '{$like_value}'",
+                    "e.user_id IN (SELECT ID FROM {$wpdb->users}"
+                        . " WHERE user_login LIKE '{$like_value}'"
+                        . " OR user_email LIKE '{$like_value}'"
+                        . " OR display_name LIKE '{$like_value}')",
+                    "e.user_id IN (SELECT user_id FROM {$wpdb->usermeta}"
+                        . " WHERE meta_key IN ('billing_cpf','_billing_cpf')"
+                        . " AND meta_value LIKE '{$like_value}')",
+                ];
+
+                // Com digitos no termo, compara tambem contra o CPF sem
+                // pontuacao: "123.456.789-00" e "12345678900" acham o mesmo
+                // aluno.
+                if (!empty($digits)) {
+                    $digits_like  = '%' . $wpdb->esc_like($digits) . '%';
+                    $conditions[] = "e.user_id IN (SELECT user_id FROM {$wpdb->usermeta}"
+                        . " WHERE meta_key IN ('billing_cpf','_billing_cpf')"
+                        . " AND REPLACE(REPLACE(REPLACE(meta_value,'.',''),'-',''),' ','') LIKE '{$digits_like}')";
+                }
+
+                return '(' . implode(' OR ', $conditions) . ')';
+            },
+            $query
+        );
     }
 
     /**

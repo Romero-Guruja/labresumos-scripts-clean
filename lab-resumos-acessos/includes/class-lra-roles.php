@@ -38,7 +38,7 @@ class LRA_Roles {
     /**
      * Versao do conjunto de capabilities. Incrementar ao alterar caps.
      */
-    const ROLES_VERSION = '3';
+    const ROLES_VERSION = '4';
 
     /**
      * Option que guarda a versao sincronizada.
@@ -101,17 +101,49 @@ class LRA_Roles {
     }
 
     /**
-     * Cria o papel de suporte e garante a capability no administrador.
+     * Cria/atualiza o papel de suporte e garante as capabilities no admin.
+     *
+     * Sincronizacao ADITIVA, de proposito: nao usa remove_role() + add_role()
+     * e nao remove capabilities. O papel lra_suporte recebe caps de OUTROS
+     * plugins nossos (ex.: lr_manage_recovery, do
+     * lab-resumos-recuperacao-de-vendas), e qualquer regravacao do conjunto
+     * completo pode apagar silenciosamente essas caps de terceiros - tirando
+     * o suporte da tela de Recuperacao de Vendas.
+     *
+     * Por que nem remocao seletiva serve: este site usa Redis como object
+     * cache, e WP_Role::add_cap()/remove_cap() REGRAVAM o array inteiro de
+     * capabilities a partir do que foi lido em wp_user_roles. Se essa leitura
+     * vier de um cache defasado (aconteceu no deploy da 1.6.0), a regravacao
+     * apaga o que nao estava na copia lida. Sendo estritamente aditivo, o pior
+     * caso passa a ser "uma cap deixou de ser adicionada nesta passada" - e
+     * nao "uma cap de outro plugin foi perdida".
+     *
+     * Consequencia aceita: para REMOVER uma cap do papel e preciso uma acao
+     * explicita (migration/WP-CLI), nao basta tirar de support_caps().
      */
     public static function create_roles() {
-        // Remove antes de recriar para que atualizacoes de caps tenham efeito.
-        remove_role(self::ROLE);
+        // Leitura fresca: evita sincronizar a partir de um wp_user_roles
+        // servido por object cache defasado.
+        if (function_exists('wp_cache_delete')) {
+            wp_cache_delete('alloptions', 'options');
+            wp_cache_delete('wp_user_roles', 'options');
+        }
 
-        add_role(
-            self::ROLE,
-            __('Suporte Lab', 'lab-resumos-acessos'),
-            array_fill_keys(self::support_caps(), true)
-        );
+        $role = get_role(self::ROLE);
+
+        if (!$role) {
+            add_role(
+                self::ROLE,
+                __('Suporte Lab', 'lab-resumos-acessos'),
+                array_fill_keys(self::support_caps(), true)
+            );
+        } else {
+            foreach (self::support_caps() as $cap) {
+                if (empty($role->capabilities[$cap])) {
+                    $role->add_cap($cap);
+                }
+            }
+        }
 
         $admin = get_role('administrator');
         if ($admin) {
@@ -135,6 +167,13 @@ class LRA_Roles {
             // Gerais.
             'read',
             'view_admin_dashboard',
+
+            // Lista de usuarios (somente leitura): o suporte precisa ver os
+            // alunos e o status de bloqueio. list_users libera APENAS a tela
+            // users.php; editar/criar/excluir/promover continuam exigindo
+            // edit_users/create_users/delete_users/promote_users, que este
+            // papel nao tem.
+            'list_users',
 
             // Pedidos (WooCommerce 10.3+ libera a tela HPOS com edit_shop_orders).
             'edit_shop_orders',
